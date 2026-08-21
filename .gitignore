@@ -1,0 +1,24 @@
+# Compiled class files
+*.class
+
+# Maven / Gradle
+target/
+.gradle/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Misc
+*.jar
