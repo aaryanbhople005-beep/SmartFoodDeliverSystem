@@ -1,24 +1,17 @@
-// package factory;
-
-// public class ComboOrderCreator extends OrderCreator {
-// }
 package factory;
 
-import models.Order;
 import models.ComboOrder;
+import models.FoodItem;
+import models.Order;
 
 public class ComboOrderCreator extends OrderCreator {
-
     @Override
     public Order createOrder(
             int orderId,
             String customerName,
-            double amount
+            FoodItem foodItem,
+            int quantity
     ) {
-        return new ComboOrder(
-                orderId,
-                customerName,
-                amount
-        );
+        return new ComboOrder(orderId, customerName, foodItem, quantity);
     }
 }
