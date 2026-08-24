@@ -10,20 +10,20 @@ public class PaymentGatewayProxy implements PaymentGateway {
     }
 
     @Override
-    public void processPayment(Order order) {
+    public boolean processPayment(Order order) {
         double amount = order.getAmount();
 
         if (amount <= 0) {
             System.out.println("✗ Payment rejected: Invalid amount.");
-            return;
+            return false;
         }
 
         if (amount > 10000) {
             System.out.println("✗ Payment rejected: Amount exceeds ₹10,000 limit.");
-            return;
+            return false;
         }
 
         System.out.println("✓ Payment authorized by proxy.");
-        realGateway.processPayment(order);
+        return realGateway.processPayment(order);
     }
 }

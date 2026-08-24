@@ -4,7 +4,8 @@ import models.Order;
 
 public class RealPaymentGateway implements PaymentGateway {
     @Override
-    public void processPayment(Order order) {
+    public boolean processPayment(Order order) {
         System.out.println("✓ Payment processed successfully.");
+        return true;
     }
 }

@@ -239,6 +239,30 @@ public class Main {
 
         boolean paymentSuccess = handleProxyPayment(gateway, order, paymentMethod);
 
+        if (!paymentSuccess) {
+            System.out.println("\n========================================");
+            System.out.println("             ORDER CANCELLED");
+            System.out.println("========================================");
+            System.out.println("Order ID          : " + order.getOrderId());
+            System.out.println("Customer          : " + customerName);
+            System.out.println("Restaurant        : " + restaurantName);
+            System.out.println();
+            System.out.println("Item              : " + order.getFoodItem().getName());
+            System.out.println("Order Type        : " + orderTypeLabel);
+            System.out.println("Quantity          : " + order.getQuantity());
+            System.out.printf("Unit Price        : Rs.%.2f%n", order.getFoodItem().getPrice());
+            System.out.printf("Total Amount      : Rs.%.2f%n", order.getAmount());
+            System.out.println();
+            System.out.println("Payment Method    : " + paymentMethod);
+            System.out.println("Payment Status    : FAILED");
+            System.out.println("Order Status      : CANCELLED");
+            System.out.println("========================================");
+            System.out.println("       ORDER PROCESS COMPLETED");
+            System.out.println("       THANK YOU FOR ORDERING!");
+            System.out.println("=======================");
+            return order;
+        }
+
         System.out.println("\n========================================");
         System.out.println("             ORDER CONFIRMED");
         System.out.println("========================================");
@@ -253,7 +277,7 @@ public class Main {
         System.out.printf("Total Amount      : Rs.%.2f%n", order.getAmount());
         System.out.println();
         System.out.println("Payment Method    : " + paymentMethod);
-        System.out.println("Payment Status    : " + (paymentSuccess ? "SUCCESS" : "PAY ON DELIVERY"));
+        System.out.println("Payment Status    : SUCCESS");
         System.out.println("Order Status      : CONFIRMED");
         System.out.println("Estimated Delivery: 30-40 minutes");
         System.out.println("========================================");
@@ -336,11 +360,10 @@ public class Main {
         if (paymentMethod.startsWith("CASH ON DELIVERY")) {
             System.out.println("[OK] Cash on Delivery selected.");
             System.out.println("[OK] Order confirmed for payment on delivery.");
-            return false;
+            return true;
         }
 
-        gateway.processPayment(order);
-        return true;
+        return gateway.processPayment(order);
     }
 
     private static int readInt() {
