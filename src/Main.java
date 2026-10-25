@@ -9,12 +9,12 @@ import factory.ComboOrderCreator;
 import factory.NonVegOrderCreator;
 import factory.OrderCreator;
 import factory.VegOrderCreator;
+import java.util.Scanner;
 import models.FoodItem;
 import models.Order;
 import proxy.PaymentGateway;
 import proxy.PaymentGatewayProxy;
 import singleton.OrderManager;
-import java.util.Scanner;
 
 public class Main {
 

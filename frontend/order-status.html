@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SmartFood — Order Status</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<nav class="navbar">
+  <div class="container">
+    <a href="index.html" class="brand"><div class="mark">SF</div><span>SmartFood</span></a>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="restaurants.html">Restaurants</a>
+      <a href="sign-in.html">Sign In</a>
+      <a href="sign-up.html">Sign Up</a>
+      <a href="cart.html" class="cart-link">Cart <span class="cart-badge" id="cart-badge">0</span></a>
+    </div>
+  </div>
+</nav>
+
+<section class="section">
+  <div class="container" style="max-width:520px;">
+    <div class="status-card">
+      <h2 style="color:var(--dark);margin-bottom:10px;">Order Status</h2>
+      <p style="color:var(--text-muted);margin-bottom:24px;">Status updates come from the backend <b>Observer</b> pattern (polled every 5s).</p>
+
+      <div class="status-pill status-placed" id="status-pill">PLACED</div>
+      <p id="status-time" style="color:var(--text-muted);font-size:0.85rem;">—</p>
+
+      <div style="margin-top:24px;">
+        <button class="btn btn-primary btn-full" id="advance-btn">Advance Status (Demo)</button>
+        <p style="font-size:0.85rem;color:var(--text-muted);margin-top:8px;">
+          Advances PLACED → CONFIRMED → PREPARING → READY_FOR_PICKUP → OUT_FOR_DELIVERY → DELIVERED.
+          Not real-time driver tracking.
+        </p>
+      </div>
+      <button class="btn btn-outline btn-full" id="back-home2" style="margin-top:16px;">Back to Home</button>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <div class="brand"><div class="mark" style="background:var(--accent);color:var(--dark);">SF</div><span>SmartFood</span></div>
+    <p>SmartFoodDeliverySystem &middot; Design Pattern Lab Project</p>
+  </div>
+</footer>
+
+<script type="module" src="js/app.js"></script>
+<script type="module" src="js/order.js"></script>
+</body>
+</html>
