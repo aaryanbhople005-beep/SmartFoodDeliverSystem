@@ -1,5 +1,17 @@
 /* SmartFoodDeliverySystem — restaurant menu */
-import { apiGet, loadCart, renderCartBadge, formatMoney, ensureSession, apiPost, cart, recomputeTotal, loadCurrentUser } from "./app.js";
+import {
+    apiGet,
+    loadCart,
+    renderCartBadge,
+    formatMoney,
+    ensureSession,
+    apiPost,
+    cart,
+    recomputeTotal,
+    loadCurrentUser,
+    addToCart,
+    toast
+} from "./app.js";
 
 const urlParams = new URLSearchParams(location.search);
 const restaurantId = urlParams.get("id");
@@ -18,16 +30,34 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("category-tabs").addEventListener("click", (e) => {
         const btn = e.target.closest(".cat-btn");
         if (!btn) return;
+
         document.querySelectorAll(".cat-btn").forEach(b => b.classList.remove("active"));
         btn.classList.add("active");
+
         loadMenu(restaurantId, btn.dataset.cat);
+    });
+
+    document.getElementById("menu-grid").addEventListener("click", async (ev) => {
+        const btn = ev.target.closest(".add-btn");
+        if (!btn) return;
+
+        try {
+            await addToCart({
+                itemId: btn.dataset.id,
+                quantity: 1
+            });
+
+            toast("Added to cart", "success");
+        } catch (err) {
+            toast(err.message || "Failed to add item", "error");
+        }
     });
 });
 
 async function loadRestaurant(id) {
     try {
         const data = await apiGet("/restaurants/" + id);
-        if (data && data.success) {
+        if (data && data.success && data.data) {
             document.getElementById("restaurant-name").textContent = data.data.name;
             const cuisineEl = document.getElementById("restaurant-cuisine");
             if (cuisineEl && data.data.category) {
@@ -45,7 +75,7 @@ async function loadMenu(id, category) {
     try {
         const data = await apiGet("/restaurants/" + id + "/menu", { category });
         loading.style.display = "none";
-        if (data && data.success) {
+	if (data && data.data && Array.isArray(data.data.items)) {
             const items = data.data.items || [];
             if (items.length === 0) {
                 grid.innerHTML = '<div class="empty-state"><div class="icon">🚫</div><p>No items in this category.</p></div>';
@@ -62,17 +92,11 @@ async function loadMenu(id, category) {
                     </div>
                 </article>
             `).join("");
-            grid.addEventListener("click", async (ev) => {
-                const btn = ev.target.closest(".add-btn");
-                if (!btn) return;
-                try {
-                    await addToCart({ itemId: btn.dataset.id, quantity: 1 });
-                    toast("Added to cart", "success");
-                } catch (err) {
-                    toast(err.message || "Failed to add item", "error");
-                }
-            });
+            
         }
+else {
+    grid.innerHTML = '<div class="empty-state"><p>Menu response is invalid.</p></div>';
+}
     } catch (e) {
         loading.style.display = "none";
         grid.innerHTML = '<div class="empty-state"><div class="icon">⚠️</div><p>Unable to load menu.</p></div>';
