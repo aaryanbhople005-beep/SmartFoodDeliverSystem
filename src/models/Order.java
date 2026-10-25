@@ -1,6 +1,7 @@
 package models;
+import prototype.Prototype;
 
-public abstract class Order {
+public abstract class Order implements Prototype<Order> {
     protected int orderId;
     protected String customerName;
     protected String restaurantName;
@@ -42,4 +43,34 @@ public abstract class Order {
     public double getAmount() {
         return amount;
     }
+
+@Override
+public Order copy() {
+    FoodItem copiedItem = new FoodItem(
+        foodItem.getItemId(),
+        foodItem.getName(),
+        foodItem.getPrice(),
+        foodItem.getCategory(),
+        foodItem.getRestaurant()
+    );
+
+    if (this instanceof VegOrder) {
+        return new VegOrder(
+            orderId, customerName, copiedItem, quantity);
+    }
+
+    if (this instanceof NonVegOrder) {
+        return new NonVegOrder(
+            orderId, customerName, copiedItem, quantity);
+    }
+
+    if (this instanceof ComboOrder) {
+        return new ComboOrder(
+            orderId, customerName, copiedItem, quantity);
+    }
+
+    throw new IllegalStateException(
+        "Unsupported order type: " + getClass().getName());
+}
+    
 }
