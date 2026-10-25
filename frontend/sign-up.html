@@ -13,8 +13,14 @@
     <div class="nav-links">
       <a href="index.html">Home</a>
       <a href="restaurants.html">Restaurants</a>
-      <a href="sign-in.html">Sign In</a>
-      <a href="sign-up.html" class="active">Sign Up</a>
+      <div id="nav-guest-links" style="display:flex;gap:8px;align-items:center;">
+        <a href="sign-in.html">Sign In</a>
+        <a href="sign-up.html" class="active">Sign Up</a>
+      </div>
+      <div id="nav-user-links" style="display:none;gap:8px;align-items:center;">
+        <span id="nav-user-name" style="color:var(--text-muted);">User</span>
+        <a href="#" id="nav-logout" style="color:var(--primary);">Sign Out</a>
+      </div>
       <a href="cart.html" class="cart-link">Cart <span class="cart-badge" id="cart-badge">0</span></a>
     </div>
   </div>
@@ -24,11 +30,7 @@
   <div class="container" style="max-width:460px;">
     <h2 class="section-title" style="text-align:left;">Sign <span>Up</span></h2>
 
-    <div class="auth-note" style="background:var(--gray-light);border:1px solid var(--gray);border-radius:var(--radius);padding:16px;margin-bottom:20px;font-size:0.9rem;color:var(--text-muted);">
-      <strong>Authentication note:</strong> This project has no authentication backend implemented yet.
-      Sign-up is a UI-only demonstration. No account is created and no credentials are stored.
-      A real authentication layer must be added to the Java backend before accounts can be registered.
-    </div>
+    <div id="signup-server-error" style="color:var(--primary);font-size:0.9rem;margin-bottom:12px;display:none;"></div>
 
     <form id="signup-form" style="background:#fff;border:1px solid var(--gray);border-radius:var(--radius);padding:24px;">
       <div class="form-group">
@@ -70,71 +72,73 @@
   </div>
 </footer>
 
-<script>
-(function () {
-  var form = document.getElementById("signup-form");
-  var name = document.getElementById("signup-name");
-  var email = document.getElementById("signup-email");
-  var password = document.getElementById("signup-password");
-  var nameError = document.getElementById("signup-name-error");
-  var emailError = document.getElementById("signup-email-error");
-  var passwordError = document.getElementById("signup-password-error");
-  var serverError = document.getElementById("signup-server-error");
-  var submit = document.getElementById("signup-submit");
+<script type="module">
+  import { register, toast } from "./js/app.js";
 
-  function clearErrors() {
-    nameError.textContent = "";
-    emailError.textContent = "";
-    passwordError.textContent = "";
-    serverError.style.display = "none";
-  }
+  (function () {
+    const form = document.getElementById("signup-form");
+    const name = document.getElementById("signup-name");
+    const email = document.getElementById("signup-email");
+    const password = document.getElementById("signup-password");
+    const nameError = document.getElementById("signup-name-error");
+    const emailError = document.getElementById("signup-email-error");
+    const passwordError = document.getElementById("signup-password-error");
+    const serverError = document.getElementById("signup-server-error");
+    const submit = document.getElementById("signup-submit");
 
-  function showServerError(msg) {
-    serverError.textContent = msg;
-    serverError.style.display = "block";
-  }
-
-  function isValidEmail(value) {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-  }
-
-  form.addEventListener("submit", function (e) {
-    e.preventDefault();
-    clearErrors();
-
-    var valid = true;
-    if (!name.value.trim()) {
-      nameError.textContent = "Full name is required.";
-      valid = false;
+    function clearErrors() {
+      nameError.textContent = "";
+      emailError.textContent = "";
+      passwordError.textContent = "";
+      serverError.style.display = "none";
     }
-    if (!email.value.trim()) {
-      emailError.textContent = "Email is required.";
-      valid = false;
-    } else if (!isValidEmail(email.value.trim())) {
-      emailError.textContent = "Please enter a valid email address.";
-      valid = false;
-    }
-    if (!password.value) {
-      passwordError.textContent = "Password is required.";
-      valid = false;
-    } else if (password.value.length < 6) {
-      passwordError.textContent = "Password must be at least 6 characters.";
-      valid = false;
-    }
-    if (!valid) return;
 
-    submit.disabled = true;
-    submit.textContent = "Creating account...";
+    function showServerError(msg) {
+      serverError.textContent = msg;
+      serverError.style.display = "block";
+    }
 
-    // No authentication backend exists in this project. Honestly inform the user
-    // instead of faking a successful registration.
-    setTimeout(function () {
-      showServerError("Authentication backend is not implemented. Sign-up UI only; no account is created.");
-      submit.disabled = false;
-      submit.textContent = "Create Account";
-    }, 600);
-  });
-})();
+    function isValidEmail(value) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      clearErrors();
+      let valid = true;
+      if (!name.value.trim()) {
+        nameError.textContent = "Full name is required.";
+        valid = false;
+      }
+      if (!email.value.trim()) {
+        emailError.textContent = "Email is required.";
+        valid = false;
+      } else if (!isValidEmail(email.value.trim())) {
+        emailError.textContent = "Please enter a valid email address.";
+        valid = false;
+      }
+      if (!password.value) {
+        passwordError.textContent = "Password is required.";
+        valid = false;
+      } else if (password.value.length < 6) {
+        passwordError.textContent = "Password must be at least 6 characters.";
+        valid = false;
+      }
+      if (!valid) return;
+
+      submit.disabled = true;
+      submit.textContent = "Creating account...";
+      try {
+        await register(name.value.trim(), email.value.trim(), password.value);
+        toast("Account created. Please sign in.", "success");
+        location.href = "sign-in.html";
+      } catch (err) {
+        showServerError(err.message || "Registration failed.");
+        submit.disabled = false;
+        submit.textContent = "Create Account";
+      }
+    });
+  })();
 </script>
 </body>
 </html>

@@ -12,9 +12,8 @@ public class CardPaymentStrategy implements PaymentStrategy {
     }
 
     @Override
-    public void pay(Order order) {
-        System.out.println("Processing card payment...");
-
-        paymentGateway.processPayment(order);
+    public boolean pay(Order order) {
+        System.out.println("Processing card payment (demo)...");
+        return paymentGateway.processPayment(order);
     }
 }

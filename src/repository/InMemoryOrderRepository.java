@@ -26,6 +26,7 @@ public class InMemoryOrderRepository implements OrderRepository {
 
     private final Map<Integer, Order> orders = new HashMap<>();
     private final Map<Integer, OrderStatusSubject> subjects = new HashMap<>();
+    private final Map<Integer, Integer> orderUserId = new HashMap<>();
 
     @Override
     public Order save(Order order) {
@@ -64,6 +65,16 @@ public class InMemoryOrderRepository implements OrderRepository {
 
     public OrderStatusSubject getSubject(int orderId) {
         return subjects.get(orderId);
+    }
+
+    @Override
+    public void associateUser(int orderId, int userId) {
+        orderUserId.put(orderId, userId);
+    }
+
+    @Override
+    public Integer getOrderUserId(int orderId) {
+        return orderUserId.get(orderId);
     }
 
     public List<Order> getOrders() {

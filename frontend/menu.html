@@ -13,8 +13,14 @@
     <div class="nav-links">
       <a href="index.html">Home</a>
       <a href="restaurants.html">Restaurants</a>
-      <a href="sign-in.html">Sign In</a>
-      <a href="sign-up.html">Sign Up</a>
+      <div id="nav-guest-links" style="display:flex;gap:8px;align-items:center;">
+        <a href="sign-in.html">Sign In</a>
+        <a href="sign-up.html">Sign Up</a>
+      </div>
+      <div id="nav-user-links" style="display:none;gap:8px;align-items:center;">
+        <span id="nav-user-name" style="color:var(--text-muted);">User</span>
+        <a href="#" id="nav-logout" style="color:var(--primary);">Sign Out</a>
+      </div>
       <a href="cart.html" class="cart-link">Cart <span class="cart-badge" id="cart-badge">0</span></a>
     </div>
   </div>
@@ -51,5 +57,9 @@
 
 <script type="module" src="js/app.js"></script>
 <script type="module" src="js/menu.js"></script>
+<script type="module">
+  import { setupLogout } from "./js/app.js";
+  setupLogout();
+</script>
 </body>
 </html>

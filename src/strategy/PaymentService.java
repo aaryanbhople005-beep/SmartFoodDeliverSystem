@@ -14,7 +14,7 @@ public class PaymentService {
         this.paymentStrategy = paymentStrategy;
     }
 
-    public void processPayment(Order order) {
+    public boolean processPayment(Order order) {
         if (paymentStrategy == null) {
             throw new IllegalStateException("Please select a payment method first.");
         }
@@ -23,6 +23,6 @@ public class PaymentService {
             throw new IllegalArgumentException("Order cannot be null.");
         }
 
-        paymentStrategy.pay(order);
+        return paymentStrategy.pay(order);
     }
 }

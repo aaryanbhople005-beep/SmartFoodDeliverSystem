@@ -23,4 +23,20 @@ public interface OrderRepository {
     void updateStatus(int orderId, observer.OrderStatus status);
 
     observer.OrderStatus getStatus(int orderId);
+
+    /**
+     * Returns the runtime status subject for an order (Observer pattern), or null
+     * if none is registered.
+     */
+    observer.OrderStatusSubject getSubject(int orderId);
+
+    /**
+     * Associates an order with the authenticated user who placed it.
+     */
+    void associateUser(int orderId, int userId);
+
+    /**
+     * Returns the id of the user who placed the order, or null if not associated.
+     */
+    Integer getOrderUserId(int orderId);
 }

@@ -13,6 +13,15 @@ public class ShoppingCart {
             throw new IllegalArgumentException("Cart item cannot be null.");
         }
 
+        // If the same item is already in the cart, increase its quantity
+        // instead of creating a duplicate row (Memento-safe).
+        for (CartItem existing : items) {
+            if (existing.getItemId().equals(item.getItemId())) {
+                existing.setQuantity(existing.getQuantity() + item.getQuantity());
+                return;
+            }
+        }
+
         items.add(item.copy());
     }
 

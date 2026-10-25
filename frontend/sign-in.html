@@ -13,8 +13,14 @@
     <div class="nav-links">
       <a href="index.html">Home</a>
       <a href="restaurants.html">Restaurants</a>
-      <a href="sign-in.html" class="active">Sign In</a>
-      <a href="sign-up.html">Sign Up</a>
+      <div id="nav-guest-links" style="display:flex;gap:8px;align-items:center;">
+        <a href="sign-in.html" class="active">Sign In</a>
+        <a href="sign-up.html">Sign Up</a>
+      </div>
+      <div id="nav-user-links" style="display:none;gap:8px;align-items:center;">
+        <span id="nav-user-name" style="color:var(--text-muted);">User</span>
+        <a href="#" id="nav-logout" style="color:var(--primary);">Sign Out</a>
+      </div>
       <a href="cart.html" class="cart-link">Cart <span class="cart-badge" id="cart-badge">0</span></a>
     </div>
   </div>
@@ -24,11 +30,7 @@
   <div class="container" style="max-width:460px;">
     <h2 class="section-title" style="text-align:left;">Sign <span>In</span></h2>
 
-    <div class="auth-note" style="background:var(--gray-light);border:1px solid var(--gray);border-radius:var(--radius);padding:16px;margin-bottom:20px;font-size:0.9rem;color:var(--text-muted);">
-      <strong>Authentication note:</strong> This project has no authentication backend implemented yet.
-      Sign-in is a UI-only demonstration. No credentials are validated and no session is created.
-      A real authentication layer must be added to the Java backend before this can log a user in.
-    </div>
+    <div id="signin-server-error" style="color:var(--primary);font-size:0.9rem;margin-bottom:12px;display:none;"></div>
 
     <form id="signin-form" style="background:#fff;border:1px solid var(--gray);border-radius:var(--radius);padding:24px;">
       <div class="form-group">
@@ -64,54 +66,42 @@
   </div>
 </footer>
 
-<script>
-(function () {
-  var form = document.getElementById("signin-form");
-  var username = document.getElementById("signin-username");
-  var password = document.getElementById("signin-password");
-  var usernameError = document.getElementById("signin-username-error");
-  var passwordError = document.getElementById("signin-password-error");
-  var serverError = document.getElementById("signin-server-error");
-  var submit = document.getElementById("signin-submit");
+<script type="module">
+  import { login } from "./js/app.js";
 
-  function clearErrors() {
-    usernameError.textContent = "";
-    passwordError.textContent = "";
-    serverError.style.display = "none";
-  }
+  (function () {
+    const form = document.getElementById("signin-form");
+    const username = document.getElementById("signin-username");
+    const password = document.getElementById("signin-password");
+    const serverError = document.getElementById("signin-server-error");
+    const submit = document.getElementById("signin-submit");
 
-  function showServerError(msg) {
-    serverError.textContent = msg;
-    serverError.style.display = "block";
-  }
-
-  form.addEventListener("submit", function (e) {
-    e.preventDefault();
-    clearErrors();
-
-    var valid = true;
-    if (!username.value.trim()) {
-      usernameError.textContent = "Email or username is required.";
-      valid = false;
-    }
-    if (!password.value) {
-      passwordError.textContent = "Password is required.";
-      valid = false;
-    }
-    if (!valid) return;
-
-    submit.disabled = true;
-    submit.textContent = "Signing in...";
-
-    // No authentication backend exists in this project. Honestly inform the user
-    // instead of faking a successful login.
-    setTimeout(function () {
-      showServerError("Authentication backend is not implemented. Sign-in UI only; no credentials are validated.");
-      submit.disabled = false;
-      submit.textContent = "Sign In";
-    }, 600);
-  });
-})();
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      serverError.style.display = "none";
+      if (!username.value.trim()) {
+        serverError.textContent = "Email or username is required.";
+        serverError.style.display = "block";
+        return;
+      }
+      if (!password.value) {
+        serverError.textContent = "Password is required.";
+        serverError.style.display = "block";
+        return;
+      }
+      submit.disabled = true;
+      submit.textContent = "Signing in...";
+      try {
+        await login(username.value.trim(), password.value);
+        location.href = "index.html";
+      } catch (err) {
+        serverError.textContent = err.message || "Sign in failed.";
+        serverError.style.display = "block";
+        submit.disabled = false;
+        submit.textContent = "Sign In";
+      }
+    });
+  })();
 </script>
 </body>
 </html>

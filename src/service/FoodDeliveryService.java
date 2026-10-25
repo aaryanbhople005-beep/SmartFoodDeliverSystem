@@ -15,15 +15,20 @@ import factory.VegOrderCreator;
 import models.FoodItem;
 import models.Order;
 import models.Restaurant;
+import models.User;
 import observer.CustomerNotificationObserver;
 import observer.OrderStatus;
 import observer.OrderStatusSubject;
 import observer.RestaurantNotificationObserver;
 import proxy.PaymentGatewayProxy;
+import repository.DatabaseOrderRepository;
+import repository.DatabaseUserRepository;
 import repository.InMemoryOrderRepository;
 import repository.InMemoryRestaurantRepository;
+import repository.InMemoryUserRepository;
 import repository.OrderRepository;
 import repository.RestaurantRepository;
+import repository.UserRepository;
 import strategy.CashOnDeliveryStrategy;
 import strategy.CardPaymentStrategy;
 import strategy.PaymentService;
@@ -70,9 +75,135 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class FoodDeliveryService {
 
-    private final RestaurantRepository restaurantRepo = new InMemoryRestaurantRepository();
-    private final OrderRepository orderRepo = new InMemoryOrderRepository();
+    private final RestaurantRepository restaurantRepo;
+    private final OrderRepository orderRepo;
+    private final UserRepository userRepo;
+    private final AuthService authService;
     private final ConcurrentMap<String, ShoppingCart> sessionCarts = new ConcurrentHashMap<>();
+
+    /* In-memory dev/test mode flag. */
+    private final boolean inMemoryMode;
+
+    public FoodDeliveryService() {
+        this.restaurantRepo = new InMemoryRestaurantRepository();
+        this.inMemoryMode = "memory".equalsIgnoreCase(persistenceMode());
+        this.orderRepo = createOrderRepository();
+        this.userRepo = createUserRepository();
+        this.authService = new AuthService(userRepo);
+    }
+
+    /** Exposed constructor for tests that want to force repositories. */
+    FoodDeliveryService(OrderRepository orderRepo, RestaurantRepository restaurantRepo, AuthService authService) {
+        this.orderRepo = orderRepo;
+        this.restaurantRepo = restaurantRepo;
+        this.authService = authService;
+        this.userRepo = null;
+        this.inMemoryMode = orderRepo instanceof InMemoryOrderRepository;
+    }
+
+    private static OrderRepository createOrderRepository() {
+        String mode = persistenceMode();
+        if ("jdbc".equalsIgnoreCase(mode)) {
+            try {
+                return new DatabaseOrderRepository();
+            } catch (IllegalStateException e) {
+                System.err.println("[WARN] JDBC persistence unavailable, falling back to in-memory: "
+                        + e.getMessage());
+                return new InMemoryOrderRepository();
+            }
+        }
+        return new InMemoryOrderRepository();
+    }
+
+    private static UserRepository createUserRepository() {
+        String mode = persistenceMode();
+        if ("jdbc".equalsIgnoreCase(mode)) {
+            try {
+                return new DatabaseUserRepository();
+            } catch (Exception e) {
+                System.err.println("[WARN] JDBC user persistence unavailable, falling back to in-memory: "
+                        + e.getMessage());
+                return new InMemoryUserRepository();
+            }
+        }
+        return new InMemoryUserRepository();
+    }
+
+    private static String persistenceMode() {
+        String prop = System.getProperty("smartfood.persistence");
+        String env = System.getenv("SMARTFOOD_PERSISTENCE");
+        String value = (prop != null && !prop.isBlank()) ? prop : env;
+        if (value == null || value.isBlank()) {
+            return "jdbc"; // production: persistent JDBC storage
+        }
+        return value;
+    }
+
+    /**
+     * Returns true when the service is running in in-memory dev/test mode
+     * (non-persistent). Exposed for tests and documentation.
+     */
+    public boolean isInMemoryMode() {
+        return inMemoryMode;
+    }
+
+    /* ---------------- Authentication ---------------- */
+
+    public User register(String name, String email, String password) {
+        return authService.register(name, email, password);
+    }
+
+    public String login(String email, String password) {
+        return authService.login(email, password);
+    }
+
+    public void logout(String sessionId) {
+        authService.logout(sessionId);
+    }
+
+    public User getCurrentUser(String sessionId) {
+        return authService.getCurrentUser(sessionId);
+    }
+
+    public boolean isAuthenticated(String sessionId) {
+        return authService.isAuthenticated(sessionId);
+    }
+
+    /**
+     * Resolves the authenticated user id for a session, throwing if the session
+     * is missing or invalid. Order-writing operations require authentication.
+     */
+    public int requireUserId(String sessionId) {
+        if (sessionId == null || sessionId.isBlank()) {
+            throw new IllegalArgumentException("Authentication required.");
+        }
+        Integer userId = authService.getUserId(sessionId);
+        if (userId == null) {
+            throw new IllegalArgumentException("Authentication required. Sign in first.");
+        }
+        return userId;
+    }
+
+    public Integer getUserId(String sessionId) {
+        if (sessionId == null || sessionId.isBlank()) return null;
+        return authService.getUserId(sessionId);
+    }
+
+    public List<Order> getOrdersForUser(int userId) {
+        List<Order> result = new ArrayList<>();
+        for (Order o : orderRepo.findAll()) {
+            Integer owner = orderRepo.getOrderUserId(o.getOrderId());
+            if (owner != null && owner.equals(userId)) {
+                result.add(o);
+            }
+        }
+        return result;
+    }
+
+    public boolean ownsOrder(int orderId, int userId) {
+        Integer owner = orderRepo.getOrderUserId(orderId);
+        return owner != null && owner.equals(userId);
+    }
 
     /* ---------- Restaurants (Abstract Factory) ---------- */
 
@@ -106,16 +237,62 @@ public class FoodDeliveryService {
         return getCart(sessionId).getTotal();
     }
 
-    public boolean addToCart(String sessionId, CartItem item) {
-        if (item == null) {
+    public boolean addToCart(String sessionId, String itemId, int quantity) {
+        if (sessionId == null || sessionId.isBlank()) {
             return false;
         }
-        // Validate price and quantity before adding
-        if (item.getPrice() < 0 || item.getQuantity() <= 0) {
+        if (itemId == null || itemId.isBlank()) {
             return false;
         }
+        if (quantity <= 0) {
+            return false;
+        }
+
+        // Look up the canonical item through the restaurant repository / Abstract
+        // Factory menus. Never trust name, price, category or restaurant supplied
+        // by the browser.
+        FoodItem canonical = findMenuItem(itemId);
+        if (canonical == null) {
+            return false; // unknown product
+        }
+
+        double price = canonical.getPrice();
+        if (Double.isNaN(price) || Double.isInfinite(price) || price < 0) {
+            return false; // invalid backend price
+        }
+
+        CartItem item = new CartItem(
+                canonical.getItemId(),
+                canonical.getName(),
+                price,
+                canonical.getCategory(),
+                canonical.getRestaurant(),
+                quantity
+        );
         getCart(sessionId).addItem(item.copy());
         return true;
+    }
+
+    /**
+     * Finds a menu item by its itemId across every restaurant and every category
+     * exposed by the Abstract Factory. Menu data is never duplicated here; it is
+     * read from the existing factory-backed repository.
+     */
+    private FoodItem findMenuItem(String itemId) {
+        if (itemId == null) {
+            return null;
+        }
+        for (Restaurant r : restaurantRepo.findAll()) {
+            for (String category : new String[]{"VEG", "NON-VEG", "COMBO", "DRINKS"}) {
+                FoodItem[] items = restaurantRepo.getMenu(r.getId(), category);
+                for (FoodItem f : items) {
+                    if (itemId.equals(f.getItemId())) {
+                        return f;
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     public boolean updateQuantity(String sessionId, String itemId, int quantity) {
@@ -177,21 +354,29 @@ public class FoodDeliveryService {
     }
 
     /**
-     * Creates one order per cart item.
+     * Creates one order per cart item, using the actual product category to
+     * select the Factory Method creator for each item (no single checkout radio
+     * button determines the type of every item).
      *
      * Flow per item:
-     *   1. OrderBuilder validates and constructs order data          (Builder pattern)
-     *   2. OrderCreator.createOrder() instantiates type-specific order  (Factory Method pattern)
-     *   3. OrderManager.getInstance().manageOrder(...)             (Singleton pattern)
-     *   4. PaymentHandler -> RestaurantHandler -> DeliveryHandler  (Chain of Responsibility)
-     *   5. OrderStatusSubject registers customer/restaurant observers (Observer pattern)
+     *   1. Resolve the canonical FoodItem from the backend (Abstract Factory).
+     *   2. OrderBuilder validates order data (Builder pattern).
+     *   3. Category-specific OrderCreator creates the order (Factory Method).
+     *   4. OrderManager.getInstance().manageOrder(...) (Singleton).
+     *   5. PaymentHandler -> RestaurantHandler -> DeliveryHandler (Chain).
+     *   6. OrderStatusSubject + customer/restaurant observers (Observer).
+     *
+     * The complete cart is validated before any order is created or persisted,
+     * so a failure on one item never leaves a partially created checkout. The
+     * cart is cleared only after every order has been created successfully.
      *
      * @param sessionId   the cart session
-     * @param orderType   "VEG", "NON_VEG", or "COMBO"
      * @param customerName the customer placing the order
      * @return list of created orders (one per cart item)
      */
-    public List<Order> createOrders(String sessionId, String orderType, String customerName) {
+    public List<Order> createOrders(String sessionId, String customerName) {
+        int userId = requireUserId(sessionId);
+
         List<CartItem> items = getCartItems(sessionId);
         if (items == null || items.isEmpty()) {
             throw new IllegalArgumentException("Cart is empty.");
@@ -200,45 +385,57 @@ public class FoodDeliveryService {
             throw new IllegalArgumentException("Customer name is required.");
         }
 
-        OrderBuilder.OrderType builderType;
-        try {
-            builderType = OrderBuilder.OrderType.valueOf(orderType.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Unknown order type: " + orderType);
-        }
-
-        OrderCreator creator = creatorFor(orderType);
-        if (creator == null) {
-            throw new IllegalArgumentException("Unknown order type: " + orderType);
-        }
-
-        List<Order> createdOrders = new ArrayList<>();
+        // --- Phase 1: validate and build every order in memory first.
+        // No order is persisted and the cart is not touched yet.
+        List<Order> toCreate = new ArrayList<>();
         int nextId = nextOrderId();
 
         for (CartItem item : items) {
-            // Build FoodItem from cart item data (use actual category and restaurant, not hardcoded)
+            // Canonical item from the backend, never from the browser.
+            FoodItem canonical = findMenuItem(item.getItemId());
+            if (canonical == null) {
+                throw new IllegalArgumentException("Unknown product in cart: " + item.getItemId());
+            }
+            double price = canonical.getPrice();
+            if (Double.isNaN(price) || Double.isInfinite(price) || price < 0) {
+                throw new IllegalArgumentException("Invalid price for product: " + item.getItemId());
+            }
+            if (item.getQuantity() <= 0) {
+                throw new IllegalArgumentException("Invalid quantity for product: " + item.getItemId());
+            }
+
             FoodItem foodItem = new FoodItem(
-                    item.getItemId(),
-                    item.getName(),
-                    item.getPrice(),
-                    item.getCategory() != null ? item.getCategory() : "VEG",
-                    item.getRestaurant()
+                    canonical.getItemId(),
+                    canonical.getName(),
+                    price,
+                    canonical.getCategory(),
+                    canonical.getRestaurant()
             );
 
-            // --- Builder pattern: validate and construct order data ---
+            OrderBuilder.OrderType builderType = categoryToBuilderType(canonical.getCategory());
+            OrderCreator creator = creatorForCategory(canonical.getCategory());
+            if (creator == null) {
+                throw new IllegalArgumentException("No order creator for category: " + canonical.getCategory());
+            }
+
+            // Builder: validate all required fields before construction.
             OrderBuilder builder = new OrderBuilder()
                     .orderId(nextId)
                     .customerName(customerName)
                     .foodItem(foodItem)
                     .quantity(item.getQuantity())
                     .orderType(builderType);
-            // builder.build() validates all required fields are present and positive
-            builder.build();
+            builder.build(); // throws IllegalArgumentException if invalid
 
-            // --- Factory Method pattern: creator instantiates the type-specific order ---
+            // Factory Method: instantiate the category-specific order.
             Order order = creator.createOrder(nextId, customerName, foodItem, item.getQuantity());
             nextId++;
 
+            toCreate.add(order);
+        }
+
+        // --- Phase 2: commit every order (Singleton, Chain, Observer, repo).
+        for (Order order : toCreate) {
             // Singleton: register the order
             singleton.OrderManager.getInstance().manageOrder(
                     order.getOrderType() + " Order #" + order.getOrderId());
@@ -246,35 +443,46 @@ public class FoodDeliveryService {
             // Chain of Responsibility validation
             boolean valid = validate(order);
             if (!valid) {
-                throw new IllegalStateException("Order validation failed for item: " + foodItem.getName());
+                throw new IllegalStateException("Order validation failed for item: " + order.getFoodItem().getName());
             }
 
             // Observer: register status subject and observers
             OrderStatusSubject subject = new OrderStatusSubject(order.getOrderId(), OrderStatus.PLACED);
-            subject.registerObserver(new CustomerNotificationObserver(customerName));
+            subject.registerObserver(new CustomerNotificationObserver(order.getCustomerName()));
             subject.registerObserver(new RestaurantNotificationObserver(order.getRestaurantName()));
             registerSubject(order.getOrderId(), subject);
 
-            // Save to repository
+            // Persist order
             orderRepo.save(order);
             orderRepo.updateStatus(order.getOrderId(), OrderStatus.PLACED);
-
-            createdOrders.add(order);
+            orderRepo.associateUser(order.getOrderId(), userId);
         }
 
-        // Clear cart after all orders placed
+        // Clear cart only after every order was created successfully.
         clearCart(sessionId);
 
-        return createdOrders;
+        return toCreate;
     }
 
-    private OrderCreator creatorFor(String orderType) {
-        if (orderType == null) return null;
-        switch (orderType.toUpperCase()) {
+    private OrderCreator creatorForCategory(String category) {
+        if (category == null) return null;
+        switch (category.toUpperCase().replace('-', '_')) {
             case "VEG": return new VegOrderCreator();
             case "NON_VEG": return new NonVegOrderCreator();
             case "COMBO": return new ComboOrderCreator();
+            case "DRINKS": return new ComboOrderCreator(); // see class doc for DRINKS classification
             default: return null;
+        }
+    }
+
+    private OrderBuilder.OrderType categoryToBuilderType(String category) {
+        if (category == null) return OrderBuilder.OrderType.COMBO;
+        switch (category.toUpperCase().replace('-', '_')) {
+            case "VEG": return OrderBuilder.OrderType.VEG;
+            case "NON_VEG": return OrderBuilder.OrderType.NON_VEG;
+            case "COMBO": return OrderBuilder.OrderType.COMBO;
+            case "DRINKS": return OrderBuilder.OrderType.COMBO;
+            default: return OrderBuilder.OrderType.COMBO;
         }
     }
 
@@ -300,7 +508,7 @@ public class FoodDeliveryService {
      * tracker; the backend reports the actual stored status.
      */
     public boolean advanceStatus(int orderId) {
-        OrderStatusSubject subject = ((InMemoryOrderRepository) orderRepo).getSubject(orderId);
+        OrderStatusSubject subject = orderRepo.getSubject(orderId);
         if (subject == null) return false;
         OrderStatus current = subject.getStatus();
         OrderStatus next;
@@ -341,9 +549,9 @@ public class FoodDeliveryService {
         paymentService.setPaymentStrategy(strategy);
 
         try {
-            paymentService.processPayment(order);
-            return new PaymentResult(true, "Payment processed.", method);
-        } catch (IllegalStateException e) {
+            boolean ok = paymentService.processPayment(order);
+            return new PaymentResult(ok, ok ? "Payment processed." : "Payment failed.", method);
+        } catch (IllegalStateException | IllegalArgumentException e) {
             return new PaymentResult(false, e.getMessage(), method);
         }
     }

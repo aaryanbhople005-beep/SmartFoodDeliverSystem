@@ -74,17 +74,22 @@ public class CartHandler extends ApiHandler {
 
             if ("add".equals(action)) {
                 String itemId = form.get("itemId");
-                String name = form.get("name");
-                double price = parseDouble(form.get("price"), 0);
                 int quantity = parseInt(form.get("quantity"), 1);
-                String category = form.get("category");
-                String restaurant = form.get("restaurant");
-                if (itemId == null || name == null) {
-                    sendError(exchange, 400, "itemId and name are required.");
+                if (itemId == null || itemId.isBlank()) {
+                    sendError(exchange, 400, "itemId is required.");
                     return;
                 }
-                service.addToCart(sessionId, new CartItem(itemId, name, price, category, restaurant, quantity));
-                sendOk(exchange, Map.of("success", true, "message", "Added to cart."));
+                if (quantity <= 0) {
+                    sendError(exchange, 400, "Invalid quantity.");
+                    return;
+                }
+                // The browser supplies only the item id and quantity. The backend
+                // resolves the canonical name, price, category and restaurant.
+                if (service.addToCart(sessionId, itemId, quantity)) {
+                    sendOk(exchange, Map.of("success", true, "message", "Added to cart."));
+                } else {
+                    sendError(exchange, 400, "Failed to add item: unknown product or invalid quantity.");
+                }
                 return;
             }
 

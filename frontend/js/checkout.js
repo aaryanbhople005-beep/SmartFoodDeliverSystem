@@ -1,7 +1,8 @@
 /* SmartFoodDeliverySystem — checkout */
-import { apiPost, loadCart, renderCartBadge, formatMoney, ensureSession, cart, toast } from "./app.js";
+import { apiPost, loadCart, renderCartBadge, formatMoney, ensureSession, cart, toast, getSession, loadCurrentUser } from "./app.js";
 
 document.addEventListener("DOMContentLoaded", async () => {
+    await loadCurrentUser();
     await loadCart();
     renderCartBadge();
     renderSummary();
@@ -10,7 +11,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     form.onsubmit = async (e) => {
         e.preventDefault();
         const customerName = document.getElementById("customer-name").value.trim();
-        const orderType = document.querySelector('input[name="orderType"]:checked').value;
         const paymentMethod = document.getElementById("payment-method").value;
 
         if (!customerName) { toast("Please enter your name", "error"); return; }
@@ -26,21 +26,44 @@ document.addEventListener("DOMContentLoaded", async () => {
         btn.textContent = "Placing order...";
 
         try {
+            // Backend validates the cart and derives each item's order type from
+            // its actual product category (no client-supplied order type).
             const created = await apiPost("/orders", {
-                session: ensureSession(),
-                orderType: orderType,
                 customerName: customerName
             });
             if (!created.success) { toast(created.error || "Order failed", "error"); btn.disabled = false; btn.textContent = "Place Order"; return; }
 
-            const orderId = created.data.orderId;
+            const orders = created.data.orders || [];
+            const total = created.data.total || 0;
+            if (orders.length === 0) { toast("No orders were created.", "error"); btn.disabled = false; btn.textContent = "Place Order"; return; }
 
-            // Process payment via Strategy + Proxy
-            const pay = await apiPost("/orders/" + orderId + "/pay", { action: "pay", method: paymentMethod });
+            // Process a payment for EVERY created order (Strategy + Proxy).
+            // Do not show success unless every payment succeeds.
+            const paymentResults = [];
+            for (const o of orders) {
+                const pay = await apiPost("/orders/" + o.orderId + "/pay", { method: paymentMethod });
+                paymentResults.push({ orderId: o.orderId, success: pay.success, message: pay.error || pay.message });
+                if (!pay.success) {
+                    // Stop processing further payments; do not show success.
+                    break;
+                }
+            }
 
-            location.href = "order-confirmation.html?id=" + orderId +
+            const allPaid = paymentResults.every(p => p.success);
+            if (!allPaid) {
+                const failed = paymentResults.find(p => !p.success);
+                toast("Payment failed for order #" + failed.orderId + ": " + (failed.message || "unknown"), "error");
+                btn.disabled = false;
+                btn.textContent = "Place Order";
+                return;
+            }
+
+            // Redirect to confirmation showing every order in the checkout.
+            const ids = orders.map(o => o.orderId).join(",");
+            location.href = "order-confirmation.html?id=" + orders[0].orderId +
+                "&ids=" + encodeURIComponent(ids) +
                 "&method=" + encodeURIComponent(paymentMethod) +
-                "&success=" + (pay.success ? "true" : "false");
+                "&success=true&total=" + encodeURIComponent(formatMoney(total));
         } catch (err) {
             toast(err.message || "Checkout failed", "error");
             btn.disabled = false;

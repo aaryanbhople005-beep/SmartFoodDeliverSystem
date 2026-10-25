@@ -1,7 +1,8 @@
 /* SmartFoodDeliverySystem — restaurant listing */
-import { apiGet, loadCart, renderCartBadge, formatMoney, ensureSession } from "./app.js";
+import { apiGet, loadCart, renderCartBadge, formatMoney, ensureSession, loadCurrentUser } from "./app.js";
 
 document.addEventListener("DOMContentLoaded", async () => {
+    await loadCurrentUser();
     await loadCart();
     renderCartBadge();
     loadRestaurants();

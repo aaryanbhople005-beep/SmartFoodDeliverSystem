@@ -12,9 +12,8 @@ public class UPIPaymentStrategy implements PaymentStrategy {
     }
 
     @Override
-    public void pay(Order order) {
-        System.out.println("Processing UPI payment...");
-
-        paymentGateway.processPayment(order);
+    public boolean pay(Order order) {
+        System.out.println("Processing UPI payment (demo)...");
+        return paymentGateway.processPayment(order);
     }
 }

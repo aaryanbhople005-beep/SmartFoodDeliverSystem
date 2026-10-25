@@ -1,10 +1,11 @@
 /* SmartFoodDeliverySystem — restaurant menu */
-import { apiGet, loadCart, renderCartBadge, formatMoney, ensureSession, apiPost, cart, recomputeTotal } from "./app.js";
+import { apiGet, loadCart, renderCartBadge, formatMoney, ensureSession, apiPost, cart, recomputeTotal, loadCurrentUser } from "./app.js";
 
 const urlParams = new URLSearchParams(location.search);
 const restaurantId = urlParams.get("id");
 
 document.addEventListener("DOMContentLoaded", async () => {
+    await loadCurrentUser();
     await loadCart();
     renderCartBadge();
     if (!restaurantId) {
@@ -64,17 +65,8 @@ async function loadMenu(id, category) {
             grid.addEventListener("click", async (ev) => {
                 const btn = ev.target.closest(".add-btn");
                 if (!btn) return;
-                const item = {
-                    itemId: btn.dataset.id,
-                    name: btn.dataset.name,
-                    price: parseFloat(btn.dataset.price),
-                    quantity: 1,
-                    category: btn.dataset.category,
-                    restaurant: btn.dataset.restaurant,
-                    subtotal: parseFloat(btn.dataset.price)
-                };
                 try {
-                    await addToCart(item);
+                    await addToCart({ itemId: btn.dataset.id, quantity: 1 });
                     toast("Added to cart", "success");
                 } catch (err) {
                     toast(err.message || "Failed to add item", "error");

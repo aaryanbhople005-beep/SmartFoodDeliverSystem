@@ -47,12 +47,26 @@ public abstract class ApiHandler implements HttpHandler {
 
     protected String readBody(HttpExchange exchange) throws IOException {
         InputStream is = exchange.getRequestBody();
-        byte[] buf = new byte[8192];
-        int read = is.read(buf);
-        if (read < 0) {
-            return "";
+        String cl = exchange.getRequestHeaders().getFirst("Content-Length");
+        int len = (cl == null) ? -1 : Integer.parseInt(cl);
+        java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+        if (len > 0) {
+            byte[] buf = new byte[Math.min(8192, len)];
+            int remaining = len;
+            while (remaining > 0) {
+                int read = is.read(buf, 0, Math.min(buf.length, remaining));
+                if (read < 0) break;
+                baos.write(buf, 0, read);
+                remaining -= read;
+            }
+        } else {
+            byte[] buf = new byte[8192];
+            int read;
+            while ((read = is.read(buf)) >= 0) {
+                baos.write(buf, 0, read);
+            }
         }
-        return new String(buf, 0, read, StandardCharsets.UTF_8);
+        return baos.toString(StandardCharsets.UTF_8.name());
     }
 
     protected Map<String, String> parseForm(String body) {

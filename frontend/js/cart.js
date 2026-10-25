@@ -1,7 +1,8 @@
 /* SmartFoodDeliverySystem — cart page */
-import { apiGet, apiPost, loadCart, renderCartBadge, formatMoney, ensureSession, cart, recomputeTotal, toast } from "./app.js";
+import { apiGet, apiPost, loadCart, renderCartBadge, formatMoney, ensureSession, cart, recomputeTotal, toast, loadCurrentUser } from "./app.js";
 
 document.addEventListener("DOMContentLoaded", async () => {
+    await loadCurrentUser();
     await loadCart();
     renderCart();
     document.getElementById("continue-shopping").onclick = () => location.href = "restaurants.html";

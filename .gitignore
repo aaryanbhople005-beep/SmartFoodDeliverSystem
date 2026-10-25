@@ -1,5 +1,6 @@
 # Compiled class files
 *.class
+out/
 
 # Maven / Gradle
 target/

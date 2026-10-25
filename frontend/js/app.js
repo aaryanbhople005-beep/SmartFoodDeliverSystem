@@ -1,7 +1,8 @@
-/* SmartFoodDeliverySystem — shared app logic (cart, nav, rendering) */
-import { getSession, ensureSession, toast } from "./api.js";
+/* SmartFoodDeliverySystem — shared app logic (cart, auth, nav, rendering) */
+import { getSession, ensureSession, setSession, clearSession, toast } from "./api.js";
 
 let cart = { items: [], total: 0 };
+let currentUser = null;
 
 function formatMoney(n) {
     return "Rs." + Number(n || 0).toFixed(2);
@@ -13,6 +14,73 @@ function renderCartBadge() {
     if (badge) {
         badge.textContent = qty;
         badge.style.display = qty > 0 ? "inline-block" : "none";
+    }
+}
+
+function renderAuthNav() {
+    const userNameEl = document.getElementById("nav-user-name");
+    const guestLinks = document.getElementById("nav-guest-links");
+    const userLinks = document.getElementById("nav-user-links");
+    if (!userNameEl && !guestLinks && !userLinks) return;
+    if (currentUser) {
+        if (userNameEl) userNameEl.textContent = currentUser.name || currentUser.email;
+        if (guestLinks) guestLinks.style.display = "none";
+        if (userLinks) userLinks.style.display = "flex";
+    } else {
+        if (userNameEl) userNameEl.textContent = "";
+        if (guestLinks) guestLinks.style.display = "flex";
+        if (userLinks) userLinks.style.display = "none";
+    }
+}
+
+async function loadCurrentUser() {
+    try {
+        const data = await apiGet("/auth/me");
+        if (data && data.success && data.data) {
+            currentUser = data.data;
+            renderAuthNav();
+        } else {
+            currentUser = null;
+            renderAuthNav();
+        }
+    } catch (e) {
+        currentUser = null;
+        renderAuthNav();
+    }
+}
+
+async function login(email, password) {
+    const data = await apiPost("/auth/login", { email, password });
+    if (data && data.success && data.data) {
+        setSession(data.data.session);
+        currentUser = data.data.user;
+        renderAuthNav();
+    }
+    return data;
+}
+
+async function register(name, email, password) {
+    const data = await apiPost("/auth/register", { name, email, password });
+    return data;
+}
+
+async function logout() {
+    try {
+        await apiPost("/auth/logout", {});
+    } catch (e) { /* ignore */ }
+    clearSession();
+    currentUser = null;
+    renderAuthNav();
+}
+
+function setupLogout() {
+    const btn = document.getElementById("nav-logout");
+    if (btn) {
+        btn.addEventListener("click", (e) => {
+            e.preventDefault();
+            logout();
+            location.href = "index.html";
+        });
     }
 }
 
@@ -31,32 +99,27 @@ async function loadCart() {
             renderCartBadge();
         }
     } catch (e) {
-        // cart may be empty on first visit; silently ignore
         cart = { items: [], total: 0 };
         renderCartBadge();
     }
 }
 
 /**
- * Add an item to the cart via the backend API, then sync local state.
+ * Add an item to the cart via the backend API. The browser sends only the item
+ * id and quantity; the backend resolves the canonical name, price, category
+ * and restaurant from its own menu data.
  */
 async function addToCart(item) {
-    if (!item || !item.itemId || !item.name) {
-        throw new Error("Invalid item: missing id or name.");
+    if (!item || !item.itemId) {
+        throw new Error("Invalid item: missing id.");
     }
-    if (item.price < 0 || item.quantity <= 0) {
-        throw new Error("Invalid price or quantity.");
+    if (!item.quantity || item.quantity <= 0) {
+        throw new Error("Invalid quantity.");
     }
     await apiPost("/cart/add", {
-        session: ensureSession(),
         itemId: item.itemId,
-        name: item.name,
-        price: item.price,
-        quantity: item.quantity,
-        category: item.category || "VEG",
-        restaurant: item.restaurant || ""
+        quantity: item.quantity
     });
-    // Sync local cart from backend after successful add
     await loadCart();
     renderCartBadge();
 }
@@ -73,7 +136,12 @@ function updateQuantity(itemId, quantity) {
     renderCartBadge();
 }
 
-function removeFromCart(itemId) {
+async function removeFromCart(itemId) {
+    try {
+        await apiPost("/cart/remove", { itemId });
+    } catch (e) {
+        toast(e.message || "Failed to remove item", "error");
+    }
     cart.items = cart.items.filter(i => i.itemId !== itemId);
     recomputeTotal();
     renderCartBadge();
@@ -84,6 +152,8 @@ function recomputeTotal() {
 }
 
 export {
-    getSession, ensureSession, formatMoney, cart, loadCart, renderCartBadge,
-    addToCart, updateQuantity, removeFromCart, recomputeTotal, apiGet, apiPost, toast
+    getSession, ensureSession, setSession, clearSession, formatMoney, cart, loadCart, renderCartBadge,
+    renderAuthNav, loadCurrentUser, login, register, logout, currentUser,
+    addToCart, updateQuantity, removeFromCart, recomputeTotal, apiGet, apiPost, toast,
+    setupLogout
 };

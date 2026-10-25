@@ -1,5 +1,5 @@
 /* SmartFoodDeliverySystem — API client */
-const API_BASE = "http://localhost:8080/api";
+const API_BASE = window.location.origin + "/api";
 
 let sessionId = null;
 
@@ -21,8 +21,21 @@ function getSession() {
     return sessionId;
 }
 
+/** Called after login to switch to the server-issued authenticated session. */
+function setSession(token) {
+    sessionId = token;
+    localStorage.setItem("sfds_session", token);
+    return token;
+}
+
+function clearSession() {
+    sessionId = null;
+    localStorage.removeItem("sfds_session");
+}
+
 async function apiGet(path, params = {}) {
     ensureSession();
+    params.session = getSession();
     let url = API_BASE + path;
     const qs = new URLSearchParams(params);
     if (qs.toString()) url += "?" + qs.toString();
@@ -32,10 +45,11 @@ async function apiGet(path, params = {}) {
 
 async function apiPost(path, body) {
     ensureSession();
+    const payload = Object.assign({ session: getSession() }, body || {});
     const res = await fetch(API_BASE + path, {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
-        body: toFormBody(body),
+        body: toFormBody(payload),
         credentials: "omit"
     });
     return parseJson(res);
@@ -74,4 +88,4 @@ function toast(message, type = "info") {
     setTimeout(() => el.classList.remove("show"), 2500);
 }
 
-export { apiGet, apiPost, getSession, ensureSession, toast };
+export { apiGet, apiPost, getSession, ensureSession, setSession, clearSession, toast };
