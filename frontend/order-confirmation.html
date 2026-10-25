@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SmartFood — Order Confirmation</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<nav class="navbar">
+  <div class="container">
+    <a href="index.html" class="brand"><div class="mark">SF</div><span>SmartFood</span></a>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="restaurants.html">Restaurants</a>
+      <a href="sign-in.html">Sign In</a>
+      <a href="sign-up.html">Sign Up</a>
+      <a href="cart.html" class="cart-link">Cart <span class="cart-badge" id="cart-badge">0</span></a>
+    </div>
+  </div>
+</nav>
+
+<section class="section">
+  <div class="container" style="max-width:600px;">
+    <div class="status-card">
+      <div style="font-size:3rem;margin-bottom:16px;">&#10003;</div>
+      <h2 style="color:var(--success);margin-bottom:10px;">Order Confirmed!</h2>
+      <p style="color:var(--text-muted);margin-bottom:24px;">Thank you for your order. Here's a summary.</p>
+
+      <div class="order-item"><span>Order Number</span><span id="order-number">#-</span></div>
+      <div class="order-item"><span>Customer</span><span id="order-customer">-</span></div>
+      <div class="order-item"><span>Restaurant</span><span id="order-restaurant">-</span></div>
+      <div class="order-item"><span>Order Type</span><span id="order-type">-</span></div>
+      <div class="order-item"><span>Item</span><span id="order-item">-</span></div>
+      <div class="order-item"><span>Quantity</span><span id="order-qty">-</span></div>
+      <div class="order-item"><span>Unit Price</span><span id="order-item-price">-</span></div>
+      <div class="order-item" style="font-weight:800;border-top:2px solid var(--gray);padding-top:10px;"><span>Total</span><span id="order-total">-</span></div>
+      <div class="order-item"><span>Payment</span><span id="order-payment">-</span></div>
+      <div class="order-item"><span>Status</span><span id="order-status" style="font-weight:800;color:var(--success);">PLACED</span></div>
+
+      <div style="margin-top:24px;">
+        <button class="btn btn-outline btn-full" id="reorder-btn">Reorder (Prototype)</button>
+        <div id="reorder-preview" style="display:none;margin-top:12px;padding:12px;background:#fff3e0;border-radius:8px;border:1px solid #ffe0b2;">
+          <div style="font-size:0.85rem;color:var(--warning);font-weight:700;margin-bottom:6px;">Copied order (Prototype):</div>
+          <div class="order-item"><span>Item</span><span id="copy-item">-</span></div>
+          <div class="order-item"><span>Quantity</span><span id="copy-qty">-</span></div>
+          <div class="order-item"><span>Amount</span><span id="copy-amount">-</span></div>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-full" id="back-home" style="margin-top:12px;">Back to Home</button>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <div class="brand"><div class="mark" style="background:var(--accent);color:var(--dark);">SF</div><span>SmartFood</span></div>
+    <p>SmartFoodDeliverySystem &middot; Design Pattern Lab Project</p>
+  </div>
+</footer>
+
+<script type="module" src="js/app.js"></script>
+<script type="module" src="js/order.js"></script>
+</body>
+</html>

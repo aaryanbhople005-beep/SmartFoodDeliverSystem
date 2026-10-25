@@ -4,9 +4,15 @@ public class CartItem {
     private final String itemId;
     private final String name;
     private final double price;
+    private final String category;
+    private final String restaurant;
     private int quantity;
 
     public CartItem(String itemId, String name, double price, int quantity) {
+        this(itemId, name, price, "VEG", "", quantity);
+    }
+
+    public CartItem(String itemId, String name, double price, String category, String restaurant, int quantity) {
         if (itemId == null || name == null) {
             throw new IllegalArgumentException("Item ID and name cannot be null.");
         }
@@ -17,6 +23,8 @@ public class CartItem {
         this.itemId = itemId;
         this.name = name;
         this.price = price;
+        this.category = category;
+        this.restaurant = restaurant;
         this.quantity = quantity;
     }
 
@@ -30,6 +38,14 @@ public class CartItem {
 
     public double getPrice() {
         return price;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public String getRestaurant() {
+        return restaurant;
     }
 
     public int getQuantity() {
@@ -48,7 +64,7 @@ public class CartItem {
     }
 
     public CartItem copy() {
-        return new CartItem(itemId, name, price, quantity);
+        return new CartItem(itemId, name, price, category, restaurant, quantity);
     }
 
     @Override

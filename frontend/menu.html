@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SmartFood — Menu</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<nav class="navbar">
+  <div class="container">
+    <a href="index.html" class="brand"><div class="mark">SF</div><span>SmartFood</span></a>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="restaurants.html">Restaurants</a>
+      <a href="sign-in.html">Sign In</a>
+      <a href="sign-up.html">Sign Up</a>
+      <a href="cart.html" class="cart-link">Cart <span class="cart-badge" id="cart-badge">0</span></a>
+    </div>
+  </div>
+</nav>
+
+<section class="section">
+  <div class="container">
+    <div class="menu-header">
+      <div class="back" onclick="location.href='restaurants.html'">&#8592; Back</div>
+      <div class="restaurant-info">
+        <h2 id="restaurant-name">Restaurant</h2>
+        <p id="restaurant-cuisine"></p>
+      </div>
+    </div>
+
+    <div class="category-tabs" id="category-tabs">
+      <button class="cat-btn active" data-cat="VEG">Veg</button>
+      <button class="cat-btn" data-cat="NON-VEG">Non-Veg</button>
+      <button class="cat-btn" data-cat="COMBO">Combo</button>
+      <button class="cat-btn" data-cat="DRINKS">Drinks</button>
+    </div>
+
+    <div id="menu-loading" style="text-align:center;padding:40px;color:var(--text-muted);">Loading menu…</div>
+    <div class="card-grid" id="menu-grid"></div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <div class="brand"><div class="mark" style="background:var(--accent);color:var(--dark);">SF</div><span>SmartFood</span></div>
+    <p>SmartFoodDeliverySystem &middot; Design Pattern Lab Project</p>
+  </div>
+</footer>
+
+<script type="module" src="js/app.js"></script>
+<script type="module" src="js/menu.js"></script>
+</body>
+</html>

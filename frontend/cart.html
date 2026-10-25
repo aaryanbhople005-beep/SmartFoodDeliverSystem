@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SmartFood — Cart</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<nav class="navbar">
+  <div class="container">
+    <a href="index.html" class="brand"><div class="mark">SF</div><span>SmartFood</span></a>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="restaurants.html">Restaurants</a>
+      <a href="sign-in.html">Sign In</a>
+      <a href="sign-up.html">Sign Up</a>
+      <a href="cart.html" class="active cart-link">Cart <span class="cart-badge" id="cart-badge">0</span></a>
+    </div>
+  </div>
+</nav>
+
+<section class="section">
+  <div class="container" style="max-width:900px;">
+    <h2 class="section-title">Your <span>Cart</span></h2>
+    <div id="cart-empty" class="empty-state" style="display:none;">
+      <div class="icon">🛒</div>
+      <p>Your cart is empty.</p>
+      <button class="btn btn-primary" onclick="location.href='restaurants.html'">Start Ordering</button>
+    </div>
+    <div id="cart-items"></div>
+    <div class="cart-summary">
+      <div class="row"><span>Subtotal</span><span id="cart-total">Rs.0.00</span></div>
+      <div class="row"><span>Delivery</span><span>Free</span></div>
+      <div class="row total"><span>Total</span><span id="cart-total-final">Rs.0.00</span></div>
+    </div>
+    <div style="display:grid;gap:12px;margin-top:20px;">
+      <button class="btn btn-primary btn-full" id="checkout">Proceed to Checkout</button>
+      <button class="btn btn-outline btn-full" id="continue-shopping">Continue Shopping</button>
+    </div>
+
+    <div style="margin-top:28px;border-top:1px solid var(--gray);padding-top:20px;">
+      <h3 style="margin-bottom:12px;color:var(--dark);">Cart Snapshot (Memento Pattern)</h3>
+      <p style="font-size:0.9rem;color:var(--text-muted);margin-bottom:12px;">
+        Save your cart state and restore it later. Demonstrates the Memento pattern (server-side in-memory snapshot).
+      </p>
+      <button class="btn btn-sm btn-outline" id="save-cart">Save Cart</button>
+      <div id="token-box" style="display:none;margin-top:10px;">
+        <label style="font-size:0.85rem;color:var(--text-muted);">Restore token:</label><br>
+        <input type="text" id="restore-token" style="padding:8px 10px;border:1px solid var(--gray);border-radius:8px;width:100%;max-width:320px;font-family:monospace;font-size:0.8rem;" readonly>
+        <button class="btn btn-sm btn-primary" id="restore-cart" style="margin-top:8px;">Restore Cart</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <div class="brand"><div class="mark" style="background:var(--accent);color:var(--dark);">SF</div><span>SmartFood</span></div>
+    <p>SmartFoodDeliverySystem &middot; Design Pattern Lab Project</p>
+  </div>
+</footer>
+
+<script type="module" src="js/app.js"></script>
+<script type="module" src="js/cart.js"></script>
+</body>
+</html>
