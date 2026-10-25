@@ -610,18 +610,34 @@ public class FoodDeliveryService {
     }
 
     private CartMemento tokenToMemento(String token) {
-        ShoppingCart cart = new ShoppingCart();
-        String body = token;
-        if (body.startsWith("cart:")) {
-            body = body.substring(5);
+        if (token == null || token.isBlank()) {
+            throw new IllegalArgumentException("Token cannot be empty");
         }
+        String body = token;
+        if (!body.startsWith("cart:")) {
+            throw new IllegalArgumentException("Invalid token format");
+        }
+        body = body.substring(5);
+        if (body.isEmpty()) {
+            throw new IllegalArgumentException("Cannot restore empty cart snapshot");
+        }
+        ShoppingCart cart = new ShoppingCart();
+        boolean hasValidItem = false;
         for (String part : body.split("\\|")) {
             String[] fields = part.split(":");
             if (fields.length >= 4) {
-                cart.addItem(new CartItem(fields[0], fields[1],
-                        Double.parseDouble(fields[2]),
-                        Integer.parseInt(fields[3])));
+                try {
+                    cart.addItem(new CartItem(fields[0], fields[1],
+                            Double.parseDouble(fields[2]),
+                            Integer.parseInt(fields[3])));
+                    hasValidItem = true;
+                } catch (NumberFormatException e) {
+                    throw new IllegalArgumentException("Invalid token format: " + e.getMessage());
+                }
             }
+        }
+        if (!hasValidItem) {
+            throw new IllegalArgumentException("Token contains no valid cart items");
         }
         return cart.save();
     }

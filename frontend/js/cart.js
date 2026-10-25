@@ -1,5 +1,5 @@
 /* SmartFoodDeliverySystem — cart page */
-import { apiGet, apiPost, loadCart, renderCartBadge, formatMoney, ensureSession, cart, recomputeTotal, toast, loadCurrentUser } from "./app.js";
+import { apiGet, apiPost, loadCart, renderCartBadge, formatMoney, ensureSession, cart, recomputeTotal, toast, loadCurrentUser, currentUser } from "./app.js";
 
 document.addEventListener("DOMContentLoaded", async () => {
     await loadCurrentUser();
@@ -86,19 +86,52 @@ async function removeItem(itemId) {
 }
 
 async function saveCart() {
+    const btn = document.getElementById("save-cart");
+    
+    // Check if user is authenticated
+    if (!currentUser) {
+        toast("Please sign in to save your cart.", "error");
+        setTimeout(() => location.href = "sign-in.html?redirect=" + encodeURIComponent(window.location.pathname), 1500);
+        return;
+    }
+    
+    // Check if cart is empty
+    if (!cart.items || cart.items.length === 0) {
+        toast("Your cart is empty. Add items before saving.", "error");
+        return;
+    }
+    
+    // Prevent double-click
+    if (btn.disabled) return;
+    btn.disabled = true;
+    btn.textContent = "Saving...";
+    
     try {
         const data = await apiPost("/cart/save", { session: ensureSession() });
-        document.getElementById("restore-token").value = data.data.token;
+        const token = data.data?.token || data.token;
+        if (!token) {
+            throw new Error("Invalid response from server");
+        }
+        document.getElementById("restore-token").value = token;
         document.getElementById("token-box").style.display = "block";
         toast("Cart snapshot saved (Memento)", "success");
     } catch (e) {
         toast(e.message || "Failed to save cart", "error");
+    } finally {
+        btn.disabled = false;
+        btn.textContent = "Save Cart";
     }
 }
 
 async function restoreCart() {
     const token = document.getElementById("restore-token").value.trim();
     if (!token) { toast("Enter a restore token", "error"); return; }
+    
+    const btn = document.getElementById("restore-cart");
+    if (btn.disabled) return;
+    btn.disabled = true;
+    btn.textContent = "Restoring...";
+    
     try {
         await apiPost("/cart/restore", { session: ensureSession(), token });
         await loadCart();
@@ -107,7 +140,10 @@ async function restoreCart() {
         toast("Cart restored (Memento)", "success");
     } catch (e) {
         toast(e.message || "Failed to restore cart", "error");
+    } finally {
+        btn.disabled = false;
+        btn.textContent = "Restore Cart";
     }
 }
 
-function escape(s) { return String(s == null ? "" : s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function escape(s) { return String(s == null ? "" : s).replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">"); }

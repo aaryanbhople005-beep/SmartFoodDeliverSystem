@@ -113,7 +113,9 @@ public class CartHandler extends ApiHandler {
 
             if ("save".equals(action)) {
                 String token = service.saveCart(sessionId);
-                sendOk(exchange, Map.of("success", true, "token", token,
+                Map<String, Object> saveData = new LinkedHashMap<>();
+                saveData.put("token", token);
+                sendOk(exchange, Map.of("success", true, "data", saveData,
                         "message", "Cart snapshot saved (Memento)."));
                 return;
             }

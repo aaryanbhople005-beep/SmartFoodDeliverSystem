@@ -8,6 +8,7 @@ import {
     apiGet,
     apiPost
 } from "./api.js";
+import { initTheme } from "./theme.js";
 
 let cart = { items: [], total: 0 };
 let currentUser = null;
@@ -29,15 +30,18 @@ function renderAuthNav() {
     const userNameEl = document.getElementById("nav-user-name");
     const guestLinks = document.getElementById("nav-guest-links");
     const userLinks = document.getElementById("nav-user-links");
-    if (!userNameEl && !guestLinks && !userLinks) return;
+    const cartLink = document.getElementById("nav-cart-link");
+    if (!userNameEl && !guestLinks && !userLinks && !cartLink) return;
     if (currentUser) {
         if (userNameEl) userNameEl.textContent = currentUser.name || currentUser.email;
         if (guestLinks) guestLinks.style.display = "none";
         if (userLinks) userLinks.style.display = "flex";
+        if (cartLink) cartLink.style.display = "inline-flex";
     } else {
         if (userNameEl) userNameEl.textContent = "";
         if (guestLinks) guestLinks.style.display = "flex";
         if (userLinks) userLinks.style.display = "none";
+        if (cartLink) cartLink.style.display = "none";
     }
 }
 
@@ -79,6 +83,7 @@ async function logout() {
     clearSession();
     currentUser = null;
     renderAuthNav();
+    location.href = "index.html";
 }
 
 function setupLogout() {
@@ -87,7 +92,6 @@ function setupLogout() {
         btn.addEventListener("click", (e) => {
             e.preventDefault();
             logout();
-            location.href = "index.html";
         });
     }
 }
@@ -116,6 +120,8 @@ async function loadCart() {
  * Add an item to the cart via the backend API. The browser sends only the item
  * id and quantity; the backend resolves the canonical name, price, category
  * and restaurant from its own menu data.
+ * Requires user to be logged in. If not logged in, redirects to sign-in page
+ * with a message and preserves the current page as redirect target.
  */
 async function addToCart(item) {
     if (!item || !item.itemId) {
@@ -124,6 +130,16 @@ async function addToCart(item) {
     if (!item.quantity || item.quantity <= 0) {
         throw new Error("Invalid quantity.");
     }
+
+    // Check if user is authenticated
+    if (!currentUser) {
+        // Store current page as redirect target
+        const currentPath = window.location.pathname + window.location.search;
+        const loginUrl = "sign-in.html?redirect=" + encodeURIComponent(currentPath) + "&message=" + encodeURIComponent("Please sign in to order food.");
+        window.location.href = loginUrl;
+        return;
+    }
+
     await apiPost("/cart/add", {
         itemId: item.itemId,
         quantity: item.quantity
@@ -163,5 +179,5 @@ export {
     getSession, ensureSession, setSession, clearSession, formatMoney, cart, loadCart, renderCartBadge,
     renderAuthNav, loadCurrentUser, login, register, logout, currentUser,
     addToCart, updateQuantity, removeFromCart, recomputeTotal, apiGet, apiPost, toast,
-    setupLogout
+    setupLogout, initTheme
 };

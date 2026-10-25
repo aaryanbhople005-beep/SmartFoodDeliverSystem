@@ -12,16 +12,19 @@
     <a href="index.html" class="brand"><div class="mark">SF</div><span>SmartFood</span></a>
     <div class="nav-links">
       <a href="index.html">Home</a>
-      <a href="restaurants.html">Restaurants</a>
       <div id="nav-guest-links" style="display:flex;gap:8px;align-items:center;">
         <a href="sign-in.html" class="active">Sign In</a>
         <a href="sign-up.html">Sign Up</a>
       </div>
       <div id="nav-user-links" style="display:none;gap:8px;align-items:center;">
         <span id="nav-user-name" style="color:var(--text-muted);">User</span>
+        <a href="cart.html" class="cart-link" id="nav-cart-link">Cart <span class="cart-badge" id="cart-badge">0</span></a>
         <a href="#" id="nav-logout" style="color:var(--primary);">Sign Out</a>
       </div>
-      <a href="cart.html" class="cart-link">Cart <span class="cart-badge" id="cart-badge">0</span></a>
+      <button id="theme-toggle" class="theme-toggle" aria-label="Switch to Dark Mode" title="Switch to Dark Mode">
+        <svg class="theme-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        <svg class="theme-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
     </div>
   </div>
 </nav>
@@ -32,7 +35,7 @@
 
     <div id="signin-server-error" style="color:var(--primary);font-size:0.9rem;margin-bottom:12px;display:none;"></div>
 
-    <form id="signin-form" style="background:#fff;border:1px solid var(--gray);border-radius:var(--radius);padding:24px;">
+    <form id="signin-form" style="background:var(--card-bg);border:1px solid var(--card-border);border-radius:var(--radius);padding:24px;">
       <div class="form-group">
         <label>Email or Username</label>
         <input type="text" id="signin-username" placeholder="e.g. aarav@example.com" required>
@@ -66,8 +69,14 @@
   </div>
 </footer>
 
+<script type="module" src="js/theme.js"></script>
+<script type="module">
+  import { initTheme } from "./js/theme.js";
+  initTheme();
+</script>
 <script type="module">
   import { login } from "./js/app.js";
+  import { getRedirectAfterLogin, clearRedirect, getRedirectMessage } from "./js/auth-guard.js";
 
   (function () {
     const form = document.getElementById("signin-form");
@@ -75,6 +84,13 @@
     const password = document.getElementById("signin-password");
     const serverError = document.getElementById("signin-server-error");
     const submit = document.getElementById("signin-submit");
+
+    // Show redirect message if present
+    const msg = getRedirectMessage();
+    if (msg) {
+      serverError.textContent = msg;
+      serverError.style.display = "block";
+    }
 
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
@@ -93,7 +109,9 @@
       submit.textContent = "Signing in...";
       try {
         await login(username.value.trim(), password.value);
-        location.href = "index.html";
+        clearRedirect();
+        const redirectUrl = getRedirectAfterLogin();
+        location.href = redirectUrl;
       } catch (err) {
         serverError.textContent = err.message || "Sign in failed.";
         serverError.style.display = "block";

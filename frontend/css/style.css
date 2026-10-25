@@ -14,6 +14,54 @@
     --shadow: 0 4px 12px rgba(0,0,0,0.08);
     --shadow-sm: 0 2px 6px rgba(0,0,0,0.06);
     --radius: 12px;
+    --card-bg: #fff;
+    --card-border: var(--gray);
+    --input-bg: #fff;
+    --input-border: var(--gray);
+    --navbar-bg: rgba(255,255,255,0.95);
+    --navbar-border: var(--gray);
+    --hero-gradient: linear-gradient(135deg, #1d3557 0%, #2a4a7a 100%);
+    --footer-bg: var(--dark);
+    --footer-text: #fff;
+    --empty-state-bg: transparent;
+    --toast-bg: var(--dark);
+    --toast-text: #fff;
+    --category-btn-bg: #fff;
+    --category-btn-border: var(--gray);
+    --category-btn-text: var(--text-muted);
+    --category-btn-active-bg: var(--primary);
+    --category-btn-active-text: #fff;
+    --status-card-bg: #fff;
+    --status-card-border: var(--gray);
+}
+
+/* Dark mode variables */
+[data-theme="dark"] {
+    --gray-light: #1e293b;
+    --gray: #334155;
+    --text: #f1f5f9;
+    --text-muted: #94a3b8;
+    --white: #0f172a;
+    --shadow: 0 4px 12px rgba(0,0,0,0.3);
+    --shadow-sm: 0 2px 6px rgba(0,0,0,0.2);
+    --card-bg: #1e293b;
+    --card-border: #334155;
+    --input-bg: #1e293b;
+    --input-border: #334155;
+    --navbar-bg: rgba(15,23,42,0.95);
+    --navbar-border: #334155;
+    --hero-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    --footer-bg: #0f172a;
+    --footer-text: #f1f5f9;
+    --toast-bg: #1e293b;
+    --toast-text: #f1f5f9;
+    --category-btn-bg: #1e293b;
+    --category-btn-border: #334155;
+    --category-btn-text: #94a3b8;
+    --category-btn-active-bg: var(--primary);
+    --category-btn-active-text: #fff;
+    --status-card-bg: #1e293b;
+    --status-card-border: #334155;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -48,8 +96,8 @@ img { max-width: 100%; display: block; }
 .navbar {
     position: sticky;
     top: 0;
-    background: rgba(255,255,255,0.95);
-    border-bottom: 1px solid var(--gray);
+    background: var(--navbar-bg);
+    border-bottom: 1px solid var(--navbar-border);
     z-index: 100;
 }
 .navbar .container {
@@ -88,6 +136,46 @@ img { max-width: 100%; display: block; }
     background: var(--gray-light);
     color: var(--primary);
 }
+
+/* Theme Toggle */
+.theme-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: var(--gray-light);
+    border: 1px solid var(--gray);
+    color: var(--text);
+    transition: background 0.2s, border-color 0.2s, transform 0.1s;
+}
+.theme-toggle:hover {
+    background: var(--gray);
+    transform: scale(1.05);
+}
+.theme-toggle:active {
+    transform: scale(0.95);
+}
+.theme-toggle svg {
+    width: 20px;
+    height: 20px;
+    stroke: currentColor;
+    fill: none;
+}
+.theme-toggle .theme-sun {
+    display: none;
+}
+.theme-toggle .theme-moon {
+    display: inline-block;
+}
+[data-theme="dark"] .theme-toggle .theme-sun {
+    display: inline-block;
+}
+[data-theme="dark"] .theme-toggle .theme-moon {
+    display: none;
+}
+
 .cart-badge {
     background: var(--primary);
     color: #fff;
@@ -123,7 +211,7 @@ img { max-width: 100%; display: block; }
 
 /* ---------- Home ---------- */
 .hero {
-    background: linear-gradient(135deg, #1d3557 0%, #2a4a7a 100%);
+    background: var(--hero-gradient);
     color: #fff;
     padding: 70px 16px;
     text-align: center;
@@ -148,8 +236,8 @@ img { max-width: 100%; display: block; }
     gap: 20px;
 }
 .restaurant-card, .food-card {
-    background: #fff;
-    border: 1px solid var(--gray);
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
     border-radius: var(--radius);
     padding: 16px;
     transition: transform 0.2s, box-shadow 0.2s;
@@ -198,17 +286,23 @@ img { max-width: 100%; display: block; }
 .category-tabs button {
     padding: 8px 14px;
     border-radius: 20px;
-    border: 1px solid var(--gray);
-    background: #fff;
-    color: var(--text-muted);
+    border: 1px solid var(--category-btn-border);
+    background: var(--category-btn-bg);
+    color: var(--category-btn-text);
     font-weight: 600;
     font-size: 0.9rem;
     white-space: nowrap;
+    transition: background 0.2s, border-color 0.2s, color 0.2s;
 }
 .category-tabs button.active {
-    background: var(--primary);
-    color: #fff;
+    background: var(--category-btn-active-bg);
+    color: var(--category-btn-active-text);
+    border-color: var(--category-btn-active-bg);
+}
+.category-tabs button:hover:not(.active) {
+    background: var(--gray-light);
     border-color: var(--primary);
+    color: var(--primary);
 }
 .empty-state {
     text-align: center;
@@ -222,8 +316,8 @@ img { max-width: 100%; display: block; }
     display: flex;
     gap: 12px;
     align-items: center;
-    background: #fff;
-    border: 1px solid var(--gray);
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
     border-radius: 10px;
     padding: 14px;
     margin-bottom: 12px;
@@ -249,7 +343,7 @@ img { max-width: 100%; display: block; }
     width: 32px; height: 32px;
     border-radius: 8px;
     border: 1px solid var(--gray);
-    background: #fff;
+    background: var(--card-bg);
     font-weight: 700;
     font-size: 1rem;
     display: grid; place-items: center;
@@ -298,10 +392,11 @@ img { max-width: 100%; display: block; }
 .form-group label { font-weight: 700; font-size: 0.9rem; color: var(--dark); }
 .form-group input, .form-group select {
     padding: 10px 12px;
-    border: 1px solid var(--gray);
+    border: 1px solid var(--input-border);
     border-radius: 10px;
     font-size: 0.95rem;
-    background: #fff;
+    background: var(--input-bg);
+    color: var(--text);
 }
 .form-group input:focus, .form-group select:focus {
     outline: 2px solid var(--primary);
@@ -338,8 +433,8 @@ img { max-width: 100%; display: block; }
 
 /* ---------- Status ---------- */
 .status-card {
-    background: #fff;
-    border: 1px solid var(--gray);
+    background: var(--status-card-bg);
+    border: 1px solid var(--status-card-border);
     border-radius: var(--radius);
     padding: 32px;
     text-align: center;
@@ -368,8 +463,8 @@ img { max-width: 100%; display: block; }
 .toast {
     position: fixed; bottom: 24px; left: 50%;
     transform: translateX(-50%);
-    background: var(--dark);
-    color: #fff;
+    background: var(--toast-bg);
+    color: var(--toast-text);
     padding: 12px 20px;
     border-radius: 10px;
     font-size: 0.95rem;
@@ -383,8 +478,8 @@ img { max-width: 100%; display: block; }
 
 /* ---------- Footer ---------- */
 footer {
-    background: var(--dark);
-    color: #fff;
+    background: var(--footer-bg);
+    color: var(--footer-text);
     padding: 40px 16px 24px;
     text-align: center;
 }
