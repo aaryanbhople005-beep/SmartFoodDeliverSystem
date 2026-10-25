@@ -1,5 +1,5 @@
 /* SmartFoodDeliverySystem — restaurant listing */
-import { apiGet, loadCart, renderCartBadge, formatMoney, ensureSession, loadCurrentUser } from "./app.js";
+import { apiGet, loadCart, renderCartBadge, formatMoney, ensureSession, loadCurrentUser, toast } from "./app.js";
 
 document.addEventListener("DOMContentLoaded", async () => {
     await loadCurrentUser();
@@ -13,7 +13,7 @@ async function loadRestaurants() {
     if (!grid) return;
     try {
         const data = await apiGet("/restaurants");
-        if (data && data.success) {
+        if (data && Array.isArray(data.data)) {
             grid.innerHTML = data.data.map(r => `
                 <article class="restaurant-card">
                     <div class="card-image">🏪</div>

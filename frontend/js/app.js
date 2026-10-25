@@ -1,5 +1,13 @@
 /* SmartFoodDeliverySystem — shared app logic (cart, auth, nav, rendering) */
-import { getSession, ensureSession, setSession, clearSession, toast } from "./api.js";
+import {
+    getSession,
+    ensureSession,
+    setSession,
+    clearSession,
+    toast,
+    apiGet,
+    apiPost
+} from "./api.js";
 
 let cart = { items: [], total: 0 };
 let currentUser = null;

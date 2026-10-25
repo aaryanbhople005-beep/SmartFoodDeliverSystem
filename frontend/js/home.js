@@ -14,7 +14,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         // Load featured foods from the backend (Actual restaurants + factory menus),
         // not from a duplicated hardcoded list.
         const restData = await apiGet("/restaurants");
-        const restaurants = (restData && restData.success) ? restData.data : [];
+        const restaurants = (restData && Array.isArray(restData.data))
+        ? restData.data
+        : [];
 
         const featured = [];
         for (const r of restaurants) {
@@ -22,7 +24,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             // Pick one Veg and one Combo item from each restaurant's real menu.
             for (const category of ["VEG", "COMBO"]) {
                 const menuData = await apiGet("/restaurants/" + id + "/menu", { category: category });
-                const items = (menuData && menuData.success) ? (menuData.data.items || []) : [];
+                const items = (menuData && menuData.data && Array.isArray(menuData.data.items))
+                ? menuData.data.items
+                : [];
                 if (items.length > 0) {
                     featured.push({ ...items[0], restaurant: r.name });
                 }
@@ -34,8 +38,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             return;
         }
 
-        grid.innerHTML = featured.map(f => `
-            <article class="food-card">
+        grid.innerHTML = featured.map(f => `            <article class="food-card">
                 <div class="card-image">🍽️</div>
                 <div class="card-title">${escape(f.name)}</div>
                 <div class="card-sub">${escape(f.category)} &bull; ${escape(f.restaurant)}</div>
