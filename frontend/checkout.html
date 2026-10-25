@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SmartFood — Checkout</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<nav class="navbar">
+  <div class="container">
+    <a href="index.html" class="brand"><div class="mark">SF</div><span>SmartFood</span></a>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="restaurants.html">Restaurants</a>
+      <a href="sign-in.html">Sign In</a>
+      <a href="sign-up.html">Sign Up</a>
+      <a href="cart.html" class="cart-link">Cart <span class="cart-badge" id="cart-badge">0</span></a>
+    </div>
+  </div>
+</nav>
+
+<section class="section">
+  <div class="container" style="max-width:700px;">
+    <h2 class="section-title">Checkout</h2>
+    <form id="checkout-form" style="background:#fff;border:1px solid var(--gray);border-radius:var(--radius);padding:24px;">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Customer Name</label>
+          <input type="text" id="customer-name" placeholder="e.g. Aarav" required>
+        </div>
+        <div class="form-group">
+          <label>Order Type</label>
+          <div style="display:flex;gap:10px;">
+            <label style="font-weight:600;font-size:0.9rem;cursor:pointer;"><input type="radio" name="orderType" value="VEG" checked> Veg</label>
+            <label style="font-weight:600;font-size:0.9rem;cursor:pointer;"><input type="radio" name="orderType" value="NON_VEG"> Non-Veg</label>
+            <label style="font-weight:600;font-size:0.9rem;cursor:pointer;"><input type="radio" name="orderType" value="COMBO"> Combo</label>
+          </div>
+        </div>
+        <div class="form-group" style="grid-column:1/-1;">
+          <label>Payment Method</label>
+          <select id="payment-method">
+            <option value="COD">Cash on Delivery</option>
+            <option value="UPI">UPI</option>
+            <option value="CARD">Card</option>
+          </select>
+          <p style="font-size:0.85rem;color:var(--text-muted);margin-top:6px;">
+            UPI and Card payments are processed through the Payment Gateway <b>Proxy</b>. Cash on Delivery bypasses the proxy.
+          </p>
+        </div>
+      </div>
+
+      <div style="grid-column:1/-1;background:var(--gray-light);border-radius:10px;padding:16px;margin-top:16px;">
+        <h4 style="margin-bottom:10px;color:var(--dark);">Order Summary</h4>
+        <div id="order-items"></div>
+        <div class="order-item" style="border-top:2px solid var(--gray);padding-top:10px;font-weight:800;">
+          <span>Total</span><span id="order-total">Rs.0.00</span>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-full" style="margin-top:16px;">Place Order</button>
+    </form>
+    <p style="text-align:center;color:var(--text-muted);font-size:0.9rem;margin-top:12px;">
+      No real card details are collected. Payment is simulated via the existing Proxy/Strategy patterns.
+    </p>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <div class="brand"><div class="mark" style="background:var(--accent);color:var(--dark);">SF</div><span>SmartFood</span></div>
+    <p>SmartFoodDeliverySystem &middot; Design Pattern Lab Project</p>
+  </div>
+</footer>
+
+<script type="module" src="js/app.js"></script>
+<script type="module" src="js/checkout.js"></script>
+</body>
+</html>

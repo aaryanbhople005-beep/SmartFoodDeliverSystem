@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SmartFood — Sign In</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<nav class="navbar">
+  <div class="container">
+    <a href="index.html" class="brand"><div class="mark">SF</div><span>SmartFood</span></a>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="restaurants.html">Restaurants</a>
+      <a href="sign-in.html" class="active">Sign In</a>
+      <a href="sign-up.html">Sign Up</a>
+      <a href="cart.html" class="cart-link">Cart <span class="cart-badge" id="cart-badge">0</span></a>
+    </div>
+  </div>
+</nav>
+
+<section class="section">
+  <div class="container" style="max-width:460px;">
+    <h2 class="section-title" style="text-align:left;">Sign <span>In</span></h2>
+
+    <div class="auth-note" style="background:var(--gray-light);border:1px solid var(--gray);border-radius:var(--radius);padding:16px;margin-bottom:20px;font-size:0.9rem;color:var(--text-muted);">
+      <strong>Authentication note:</strong> This project has no authentication backend implemented yet.
+      Sign-in is a UI-only demonstration. No credentials are validated and no session is created.
+      A real authentication layer must be added to the Java backend before this can log a user in.
+    </div>
+
+    <form id="signin-form" style="background:#fff;border:1px solid var(--gray);border-radius:var(--radius);padding:24px;">
+      <div class="form-group">
+        <label>Email or Username</label>
+        <input type="text" id="signin-username" placeholder="e.g. aarav@example.com" required>
+        <div id="signin-username-error" style="color:var(--primary);font-size:0.85rem;margin-top:6px;"></div>
+      </div>
+
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="signin-password" placeholder="••••••••" required>
+        <div id="signin-password-error" style="color:var(--primary);font-size:0.85rem;margin-top:6px;"></div>
+      </div>
+
+      <div id="signin-server-error" style="color:var(--primary);font-size:0.9rem;margin-bottom:12px;display:none;"></div>
+
+      <button type="submit" class="btn btn-primary btn-full" id="signin-submit">Sign In</button>
+    </form>
+
+    <p style="text-align:center;color:var(--text-muted);font-size:0.9rem;margin-top:16px;">
+      Don't have an account? <a href="sign-up.html" style="color:var(--primary);font-weight:700;">Sign Up</a>
+    </p>
+    <p style="text-align:center;color:var(--text-muted);font-size:0.9rem;">
+      <a href="index.html" style="color:var(--primary);font-weight:700;">&larr; Back to Home</a>
+    </p>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <div class="brand"><div class="mark" style="background:var(--accent);color:var(--dark);">SF</div><span>SmartFood</span></div>
+    <p>SmartFoodDeliverySystem &middot; Design Pattern Lab Project</p>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var form = document.getElementById("signin-form");
+  var username = document.getElementById("signin-username");
+  var password = document.getElementById("signin-password");
+  var usernameError = document.getElementById("signin-username-error");
+  var passwordError = document.getElementById("signin-password-error");
+  var serverError = document.getElementById("signin-server-error");
+  var submit = document.getElementById("signin-submit");
+
+  function clearErrors() {
+    usernameError.textContent = "";
+    passwordError.textContent = "";
+    serverError.style.display = "none";
+  }
+
+  function showServerError(msg) {
+    serverError.textContent = msg;
+    serverError.style.display = "block";
+  }
+
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    clearErrors();
+
+    var valid = true;
+    if (!username.value.trim()) {
+      usernameError.textContent = "Email or username is required.";
+      valid = false;
+    }
+    if (!password.value) {
+      passwordError.textContent = "Password is required.";
+      valid = false;
+    }
+    if (!valid) return;
+
+    submit.disabled = true;
+    submit.textContent = "Signing in...";
+
+    // No authentication backend exists in this project. Honestly inform the user
+    // instead of faking a successful login.
+    setTimeout(function () {
+      showServerError("Authentication backend is not implemented. Sign-in UI only; no credentials are validated.");
+      submit.disabled = false;
+      submit.textContent = "Sign In";
+    }, 600);
+  });
+})();
+</script>
+</body>
+</html>
