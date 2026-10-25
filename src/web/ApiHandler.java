@@ -47,8 +47,11 @@ public abstract class ApiHandler implements HttpHandler {
 
     protected String readBody(HttpExchange exchange) throws IOException {
         InputStream is = exchange.getRequestBody();
-        byte[] buf = new byte[Math.max(is.available(), 8192)];
+        byte[] buf = new byte[8192];
         int read = is.read(buf);
+        if (read < 0) {
+            return "";
+        }
         return new String(buf, 0, read, StandardCharsets.UTF_8);
     }
 
