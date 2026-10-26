@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SmartFood — Pattern Showcase</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<nav class="navbar">
+  <div class="container">
+    <a href="index.html" class="brand"><div class="mark">SF</div><span>SmartFood</span></a>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="pattern-showcase.html" class="active">Patterns</a>
+      <div id="nav-guest-links" style="display:flex;gap:8px;align-items:center;">
+        <a href="sign-in.html">Sign In</a>
+        <a href="sign-up.html">Sign Up</a>
+      </div>
+      <div id="nav-user-links" style="display:none;gap:8px;align-items:center;">
+        <span id="nav-user-name" style="color:var(--text-muted);">User</span>
+        <a href="cart.html" class="cart-link" id="nav-cart-link">Cart <span class="cart-badge" id="cart-badge">0</span></a>
+        <a href="#" id="nav-logout" style="color:var(--primary);">Sign Out</a>
+      </div>
+      <button id="theme-toggle" class="theme-toggle" aria-label="Switch to Dark Mode" title="Switch to Dark Mode">
+        <svg class="theme-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        <svg class="theme-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<section class="hero" style="padding:50px 16px;border-radius:0 0 40px 40px;">
+  <div class="container" style="text-align:center;">
+    <h1>Design Pattern Showcase</h1>
+    <p style="max-width:700px;margin:0 auto 24px;opacity:0.95;">All 10 GoF patterns demonstrated live. Click any card to run a real operation.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="card-grid" id="patterns-grid">
+      <!-- Patterns rendered by JS -->
+    </div>
+  </div>
+</section>
+
+<section class="section" id="demo-output" style="display:none;">
+  <div class="container" style="max-width:900px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h2 class="section-title" id="demo-title" style="margin:0;"></h2>
+      <button class="btn btn-outline" id="close-demo">← Back to Patterns</button>
+    </div>
+    <div style="background:var(--card-bg);border:1px solid var(--card-border);border-radius:var(--radius);padding:24px;min-height:300px;">
+      <pre id="demo-console" style="font-family:monospace;font-size:0.85rem;white-space:pre-wrap;color:var(--text);"></pre>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <div class="brand"><div class="mark" style="background:var(--accent);color:var(--dark);">SF</div><span>SmartFood</span></div>
+    <p>SmartFoodDeliverySystem — Design Pattern Lab Project</p>
+  </div>
+</footer>
+
+<script type="module" src="js/theme.js"></script>
+<script type="module">
+  import { initTheme } from "./js/theme.js";
+  initTheme();
+</script>
+<script type="module" src="js/app.js"></script>
+<script type="module" src="js/pattern-showcase.js"></script>
+<script type="module">
+  import { setupLogout } from "./js/app.js";
+  setupLogout();
+</script>
+</body>
+</html>
