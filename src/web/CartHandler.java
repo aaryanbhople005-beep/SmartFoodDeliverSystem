@@ -1,6 +1,7 @@
 package web;
 
 import memento.CartItem;
+import repository.DatabaseCartRepository;
 import service.FoodDeliveryService;
 
 import java.util.ArrayList;
@@ -21,9 +22,10 @@ import java.io.IOException;
  *   POST   /api/cart/remove?session=            -> remove item (form: itemId)
  *   POST   /api/cart/save?session=              -> returns memento token
  *   POST   /api/cart/restore?session=           -> restore memento (form: token)
+ *   GET    /api/cart/snapshots?session=         -> list saved snapshots for user
  *
- * Cart state lives server-side in memory (ShoppingCart + Memento). The session id
- * routes to the correct per-session cart. No database is used.
+ * Cart state is persisted in SQLite database. The session id routes to the correct
+ * per-session cart. Database operations use DatabaseCartRepository.
  */
 public class CartHandler extends ApiHandler {
 
@@ -66,6 +68,26 @@ public class CartHandler extends ApiHandler {
             data.put("items", items);
             data.put("total", service.getCartTotal(sessionId));
             sendOk(exchange, Map.of("success", true, "data", data));
+            return;
+        }
+
+        // GET /api/cart/snapshots?session= - list user's saved snapshots
+        if ("GET".equals(method) && segs.size() == 2 && "cart".equals(segs.get(0)) && "snapshots".equals(segs.get(1))) {
+            Integer userId = service.getUserId(sessionId);
+            if (userId == null) {
+                sendError(exchange, 401, "Authentication required.");
+                return;
+            }
+            List<DatabaseCartRepository.CartSnapshot> snapshots = service.getCartSnapshots(userId);
+            List<Map<String, Object>> snapList = new ArrayList<>();
+            for (DatabaseCartRepository.CartSnapshot snap : snapshots) {
+                Map<String, Object> m = new LinkedHashMap<>();
+                m.put("id", snap.id);
+                m.put("token", snap.token);
+                m.put("createdAt", snap.createdAt);
+                snapList.add(m);
+            }
+            sendOk(exchange, Map.of("success", true, "data", snapList));
             return;
         }
 

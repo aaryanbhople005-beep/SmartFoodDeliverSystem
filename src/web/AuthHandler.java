@@ -98,15 +98,33 @@ public class AuthHandler extends ApiHandler {
     private void handleLogin(HttpExchange exchange, Map<String, String> form) throws IOException {
         String email = form.get("email");
         String password = form.get("password");
+        String oldSessionId = form.get("session"); // Old session from browser
         try {
-            String session = service.login(email, password);
-            User user = service.getCurrentUser(session);
+            String newSessionId = service.login(email, password);
+            
+            // Transfer cart from old session to new session if old session exists
+            if (oldSessionId != null && !oldSessionId.isBlank() && !oldSessionId.equals(newSessionId)) {
+                service.transferCart(oldSessionId, newSessionId);
+            }
+            
+            // Also load user's persistent cart from database
+            Integer userId = service.getUserId(newSessionId);
+            if (userId != null) {
+                service.loadUserCartForSession(userId, newSessionId);
+            }
+            
+            // Associate the new session with the user for future persistence
+            if (userId != null) {
+                service.associateSessionWithUser(newSessionId, userId);
+            }
+            
+            User user = service.getCurrentUser(newSessionId);
             Map<String, Object> u = new LinkedHashMap<>();
             u.put("id", user.getId());
             u.put("name", user.getName());
             u.put("email", user.getEmail());
             sendOk(exchange, Map.of("success", true, "data", Map.of(
-                    "session", session,
+                    "session", newSessionId,
                     "user", u
             ), "message", "Signed in."));
         } catch (IllegalArgumentException e) {

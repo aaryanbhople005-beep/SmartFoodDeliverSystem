@@ -1,6 +1,7 @@
 package service;
 
 import models.User;
+import repository.DatabaseSessionRepository;
 import repository.UserRepository;
 
 import java.security.SecureRandom;
@@ -15,11 +16,12 @@ import javax.crypto.spec.PBEKeySpec;
  * Backend authentication service.
  *
  * - Registers users with validated input and rejects duplicate emails.
- * * Passwords are hashed with PBKDF2WithHmacSHA256 (16-byte random salt,
+ * - Passwords are hashed with PBKDF2WithHmacSHA256 (16-byte random salt,
  *   65536 iterations). Plain-text passwords are never stored.
  * - Issues server-recognized session tokens; a browser-generated identifier is
  *   not accepted as proof of authentication.
  * - Sessions expire after a fixed idle time and are invalidated on logout.
+ * - Sessions are persisted in SQLite via DatabaseSessionRepository.
  */
 public class AuthService {
 
@@ -31,11 +33,18 @@ public class AuthService {
     private static final String ALGORITHM = "PBKDF2WithHmacSHA256";
 
     private final UserRepository userRepository;
-    private final ConcurrentMap<String, Session> sessions = new ConcurrentHashMap<>();
+    private final DatabaseSessionRepository sessionRepo;
     private final SecureRandom random = new SecureRandom();
 
     public AuthService(UserRepository userRepository) {
         this.userRepository = userRepository;
+        this.sessionRepo = new DatabaseSessionRepository();
+    }
+
+    /** Exposed constructor for tests. */
+    AuthService(UserRepository userRepository, DatabaseSessionRepository sessionRepo) {
+        this.userRepository = userRepository;
+        this.sessionRepo = sessionRepo;
     }
 
     /** Register a new user. Throws IllegalArgumentException on validation/duplicate errors. */
@@ -63,51 +72,26 @@ public class AuthService {
         if (user == null || !verifyPassword(password, user.getPasswordHash())) {
             throw new IllegalArgumentException("Invalid email or password.");
         }
-        return createSession(user);
+        return sessionRepo.createSession(user.getId());
     }
 
     public void logout(String sessionId) {
-        if (sessionId != null) sessions.remove(sessionId);
+        if (sessionId != null) sessionRepo.deleteSession(sessionId);
     }
 
     /** Returns the current authenticated user for a session token, or null if none. */
     public User getCurrentUser(String sessionId) {
-        Session s = session(sessionId);
-        return s == null ? null : s.user;
+        Integer userId = sessionRepo.getUserId(sessionId);
+        if (userId == null) return null;
+        return userRepository.findById(userId);
     }
     /** Returns the authenticated user id for a session token, or null if none. */
     public Integer getUserId(String sessionId) {
-        Session s = session(sessionId);
-        return s == null ? null : s.user.getId();
+        return sessionRepo.getUserId(sessionId);
     }
 
     public boolean isAuthenticated(String sessionId) {
-        return session(sessionId) != null;
-    }
-
-    private Session session(String sessionId) {
-        if (sessionId == null || sessionId.isBlank()) return null;
-        Session s = sessions.get(sessionId);
-        if (s == null) return null;
-        if (System.currentTimeMillis() > s.expiry) {
-            sessions.remove(sessionId);
-            return null;
-        }
-        // refresh idle expiry
-        s.expiry = System.currentTimeMillis() + SESSION_TTL_MS;
-        return s;
-    }
-
-    private String createSession(User user) {
-        String token = randomToken();
-        sessions.put(token, new Session(user));
-        return token;
-    }
-
-    private String randomToken() {
-        byte[] bytes = new byte[24];
-        random.nextBytes(bytes);
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+        return sessionRepo.isAuthenticated(sessionId);
     }
 
     /* ---------------- password hashing ---------------- */
@@ -183,16 +167,6 @@ public class AuthService {
         }
         if (password.length() < 6) {
             throw new IllegalArgumentException("Password must be at least 6 characters.");
-        }
-    }
-
-    /** Session record. */
-    private static final class Session {
-        final User user;
-        long expiry;
-        Session(User user) {
-            this.user = user;
-            this.expiry = System.currentTimeMillis() + SESSION_TTL_MS;
         }
     }
 }

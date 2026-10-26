@@ -67,6 +67,37 @@
   </div>
 </section>
 
+<section class="section" style="background:var(--gray-light);">
+  <div class="container">
+    <h2 class="section-title">Database Storage</h2>
+    <p style="text-align:center;color:var(--text-muted);max-width:700px;margin:0 auto 24px;">
+      The following data is now persistently stored in SQLite and survives server restarts:
+    </p>
+    <div class="card-grid" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr));">
+      <div class="restaurant-card" style="text-align:left;">
+        <div class="card-image" style="background:#e8f5e9;">🍽️</div>
+        <div class="card-title">Restaurant Menus</div>
+        <div class="card-sub">SQLite database, accessed through RestaurantFactory (Abstract Factory)</div>
+      </div>
+      <div class="restaurant-card" style="text-align:left;">
+        <div class="card-image" style="background:#fff3e0;">🛒</div>
+        <div class="card-title">Cart Contents</div>
+        <div class="card-sub">SQLite database, associated with user/session</div>
+      </div>
+      <div class="restaurant-card" style="text-align:left;">
+        <div class="card-image" style="background:#e3f2fd;">💾</div>
+        <div class="card-title">Cart Snapshots (Memento)</div>
+        <div class="card-sub">SQLite database, multiple snapshots per user</div>
+      </div>
+      <div class="restaurant-card" style="text-align:left;">
+        <div class="card-image" style="background:#fce4ec;">🔐</div>
+        <div class="card-title">Session Management</div>
+        <div class="card-sub">Persistent session storage in SQLite</div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <footer>
   <div class="container">
     <div class="brand"><div class="mark" style="background:var(--accent);color:var(--dark);">SF</div><span>SmartFood</span></div>

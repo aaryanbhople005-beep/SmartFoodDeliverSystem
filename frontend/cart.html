@@ -51,13 +51,18 @@
     <div style="margin-top:28px;border-top:1px solid var(--gray);padding-top:20px;">
       <h3 style="margin-bottom:12px;color:var(--dark);">Cart Snapshot (Memento Pattern)</h3>
       <p style="font-size:0.9rem;color:var(--text-muted);margin-bottom:12px;">
-        Save your cart state and restore it later. Demonstrates the Memento pattern (server-side in-memory snapshot).
+        Save your cart state and restore it later. Demonstrates the Memento pattern (server-side SQLite snapshot).
       </p>
       <button class="btn btn-sm btn-outline" id="save-cart">Save Cart</button>
       <div id="token-box" style="display:none;margin-top:10px;">
         <label style="font-size:0.85rem;color:var(--text-muted);">Restore token:</label><br>
         <input type="text" id="restore-token" style="padding:8px 10px;border:1px solid var(--gray);border-radius:8px;width:100%;max-width:320px;font-family:monospace;font-size:0.8rem;" readonly>
         <button class="btn btn-sm btn-primary" id="restore-cart" style="margin-top:8px;">Restore Cart</button>
+      </div>
+      
+      <div style="margin-top:24px;">
+        <h4 style="margin-bottom:12px;color:var(--dark);">Saved Snapshots</h4>
+        <div id="snapshots-list"></div>
       </div>
     </div>
   </div>

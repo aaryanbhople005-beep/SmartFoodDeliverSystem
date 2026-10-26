@@ -21,7 +21,10 @@ import observer.OrderStatus;
 import observer.OrderStatusSubject;
 import observer.RestaurantNotificationObserver;
 import proxy.PaymentGatewayProxy;
+import repository.DatabaseCartRepository;
 import repository.DatabaseOrderRepository;
+import repository.DatabaseRestaurantRepository;
+import repository.DatabaseSessionRepository;
 import repository.DatabaseUserRepository;
 import repository.InMemoryOrderRepository;
 import repository.InMemoryRestaurantRepository;
@@ -55,8 +58,6 @@ import java.util.concurrent.ConcurrentMap;
  * does not re-implement them.
  *
  * Persistence is behind repository interfaces so JDBC/DAO can be dropped in later.
- * The current implementations are in-memory and explicitly temporary (no database
- * connection).
  *
  * Patterns integrated here:
  *   - Abstract Factory -> RestaurantRepository provides menus (no menu duplication)
@@ -79,17 +80,20 @@ public class FoodDeliveryService {
     private final OrderRepository orderRepo;
     private final UserRepository userRepo;
     private final AuthService authService;
-    private final ConcurrentMap<String, ShoppingCart> sessionCarts = new ConcurrentHashMap<>();
+    private final DatabaseCartRepository cartRepo;
+    private final DatabaseSessionRepository sessionRepo;
 
     /* In-memory dev/test mode flag. */
     private final boolean inMemoryMode;
 
     public FoodDeliveryService() {
-        this.restaurantRepo = new InMemoryRestaurantRepository();
+        this.restaurantRepo = new DatabaseRestaurantRepository();
         this.inMemoryMode = "memory".equalsIgnoreCase(persistenceMode());
         this.orderRepo = createOrderRepository();
         this.userRepo = createUserRepository();
-        this.authService = new AuthService(userRepo);
+        this.cartRepo = new DatabaseCartRepository();
+        this.sessionRepo = new DatabaseSessionRepository();
+        this.authService = new AuthService(userRepo, sessionRepo);
     }
 
     /** Exposed constructor for tests that want to force repositories. */
@@ -98,6 +102,8 @@ public class FoodDeliveryService {
         this.restaurantRepo = restaurantRepo;
         this.authService = authService;
         this.userRepo = null;
+        this.cartRepo = new DatabaseCartRepository();
+        this.sessionRepo = new DatabaseSessionRepository();
         this.inMemoryMode = orderRepo instanceof InMemoryOrderRepository;
     }
 
@@ -154,7 +160,14 @@ public class FoodDeliveryService {
     }
 
     public String login(String email, String password) {
-        return authService.login(email, password);
+        // Get the current session ID from the request context if available
+        // For now, we'll rely on the frontend to handle cart transfer
+        // The auth service creates a new session, so we need to handle cart transfer
+        String newSessionId = authService.login(email, password);
+        
+        // Note: Cart transfer should happen in the handler after login
+        // This is a simplified approach - the actual transfer happens in AuthHandler
+        return newSessionId;
     }
 
     public void logout(String sessionId) {
@@ -225,16 +238,12 @@ public class FoodDeliveryService {
 
     /* ---------- Cart (Memento + per-session state) ---------- */
 
-    private ShoppingCart getCart(String sessionId) {
-        return sessionCarts.computeIfAbsent(sessionId, k -> new ShoppingCart());
-    }
-
     public List<CartItem> getCartItems(String sessionId) {
-        return new ArrayList<>(getCart(sessionId).getItems());
+        return cartRepo.getCartItems(sessionId);
     }
 
     public double getCartTotal(String sessionId) {
-        return getCart(sessionId).getTotal();
+        return cartRepo.getCartTotal(sessionId);
     }
 
     public boolean addToCart(String sessionId, String itemId, int quantity) {
@@ -269,7 +278,14 @@ public class FoodDeliveryService {
                 canonical.getRestaurant(),
                 quantity
         );
-        getCart(sessionId).addItem(item.copy());
+        cartRepo.addToCart(sessionId, item);
+        
+        // If user is logged in, associate the cart with the user for persistence
+        Integer userId = authService.getUserId(sessionId);
+        if (userId != null) {
+            cartRepo.associateSessionWithUser(sessionId, userId);
+        }
+        
         return true;
     }
 
@@ -296,49 +312,62 @@ public class FoodDeliveryService {
     }
 
     public boolean updateQuantity(String sessionId, String itemId, int quantity) {
-        try {
-            getCart(sessionId).updateQuantity(itemId, quantity);
-            return true;
-        } catch (IllegalArgumentException e) {
-            return false;
-        }
+        return cartRepo.updateQuantity(sessionId, itemId, quantity);
     }
 
     public boolean removeFromCart(String sessionId, String itemId) {
-        getCart(sessionId).removeItem(itemId);
-        return true;
+        return cartRepo.removeFromCart(sessionId, itemId);
     }
 
     public void clearCart(String sessionId) {
-        ShoppingCart cart = sessionCarts.remove(sessionId);
-        if (cart != null) {
-            for (CartItem item : new ArrayList<>(cart.getItems())) {
-                cart.removeItem(item.getItemId());
-            }
-        }
+        cartRepo.clearCart(sessionId);
+    }
+
+    /**
+     * Transfer cart from old session to new session (on login).
+     */
+    public void transferCart(String oldSessionId, String newSessionId) {
+        cartRepo.transferCart(oldSessionId, newSessionId);
     }
 
     /**
      * Saves a cart snapshot (Memento). Returns a serializable token representing
      * the current cart state. This token can later be passed back to restore().
-     * Data is in-memory only.
+     * Data is persisted in SQLite.
      */
     public String saveCart(String sessionId) {
-        CartMemento memento = getCart(sessionId).save();
-        return mementoToToken(memento);
+        Integer userId = authService.getUserId(sessionId);
+        memento.ShoppingCart tempCart = new memento.ShoppingCart();
+        for (CartItem item : cartRepo.getCartItems(sessionId)) {
+            tempCart.addItem(item);
+        }
+        CartMemento memento = tempCart.save();
+        return cartRepo.saveCartSnapshot(sessionId, userId, memento);
     }
 
     /**
      * Restores a cart from a previously saved token (Memento).
      */
     public boolean restoreCart(String sessionId, String token) {
-        try {
-            CartMemento memento = tokenToMemento(token);
-            getCart(sessionId).restore(memento);
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
+        return cartRepo.restoreCart(sessionId, token);
+    }
+
+    public List<DatabaseCartRepository.CartSnapshot> getCartSnapshots(Integer userId) {
+        return cartRepo.getSnapshotsForUser(userId);
+    }
+
+    /**
+     * Load user's persistent cart for a new session (called on login).
+     */
+    public void loadUserCartForSession(int userId, String newSessionId) {
+        cartRepo.loadUserCartForSession(userId, newSessionId);
+    }
+
+    /**
+     * Associate current session with authenticated user (called on login).
+     */
+    public void associateSessionWithUser(String sessionId, int userId) {
+        cartRepo.associateSessionWithUser(sessionId, userId);
     }
 
     /* ---------- Orders (Factory Method + Builder / Chain / Singleton / Proxy / Strategy / Observer / Prototype) ---------- */
@@ -595,50 +624,5 @@ public class FoodDeliveryService {
         public PaymentResult(boolean success, String message, String method) {
             this.success = success; this.message = message; this.method = method;
         }
-    }
-
-    private String mementoToToken(CartMemento memento) {
-        StringBuilder sb = new StringBuilder("cart:");
-        List<CartItem> items = memento.getSavedItems();
-        for (int i = 0; i < items.size(); i++) {
-            CartItem it = items.get(i);
-            sb.append(it.getItemId()).append(":").append(it.getName()).append(":")
-              .append(it.getPrice()).append(":").append(it.getQuantity());
-            if (i < items.size() - 1) sb.append("|");
-        }
-        return sb.toString();
-    }
-
-    private CartMemento tokenToMemento(String token) {
-        if (token == null || token.isBlank()) {
-            throw new IllegalArgumentException("Token cannot be empty");
-        }
-        String body = token;
-        if (!body.startsWith("cart:")) {
-            throw new IllegalArgumentException("Invalid token format");
-        }
-        body = body.substring(5);
-        if (body.isEmpty()) {
-            throw new IllegalArgumentException("Cannot restore empty cart snapshot");
-        }
-        ShoppingCart cart = new ShoppingCart();
-        boolean hasValidItem = false;
-        for (String part : body.split("\\|")) {
-            String[] fields = part.split(":");
-            if (fields.length >= 4) {
-                try {
-                    cart.addItem(new CartItem(fields[0], fields[1],
-                            Double.parseDouble(fields[2]),
-                            Integer.parseInt(fields[3])));
-                    hasValidItem = true;
-                } catch (NumberFormatException e) {
-                    throw new IllegalArgumentException("Invalid token format: " + e.getMessage());
-                }
-            }
-        }
-        if (!hasValidItem) {
-            throw new IllegalArgumentException("Token contains no valid cart items");
-        }
-        return cart.save();
     }
 }

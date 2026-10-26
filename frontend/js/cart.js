@@ -5,6 +5,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     await loadCurrentUser();
     await loadCart();
     renderCart();
+    loadSnapshots();
     document.getElementById("continue-shopping").onclick = () => location.href = "restaurants.html";
     document.getElementById("checkout").onclick = () => location.href = "checkout.html";
     document.getElementById("save-cart").onclick = saveCart;
@@ -52,6 +53,46 @@ function renderCart() {
     });
 
     totalEl.textContent = formatMoney(cart.total);
+}
+
+async function loadSnapshots() {
+    try {
+        const data = await apiGet("/cart/snapshots");
+        if (data && data.success && Array.isArray(data.data)) {
+            renderSnapshots(data.data);
+        }
+    } catch (e) {
+        // Ignore - snapshots may not be available if not logged in
+    }
+}
+
+function renderSnapshots(snapshots) {
+    const container = document.getElementById("snapshots-list");
+    if (!container) return;
+    
+    if (snapshots.length === 0) {
+        container.innerHTML = '<p style="color:var(--text-muted);font-size:0.9rem;">No saved snapshots yet.</p>';
+        return;
+    }
+    
+    container.innerHTML = snapshots.map(snap => `
+        <div class="snapshot-item" style="border:1px solid var(--card-border);border-radius:8px;padding:12px;margin-bottom:8px;background:var(--card-bg);">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+                <div>
+                    <strong>Snapshot #${snap.id}</strong>
+                    <span style="margin-left:8px;font-size:0.85rem;color:var(--text-muted);">${snap.createdAt}</span>
+                </div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    <input type="text" value="${snap.token}" readonly style="font-family:monospace;font-size:0.75rem;padding:4px 8px;border:1px solid var(--gray);border-radius:4px;background:var(--input-bg);min-width:200px;">
+                    <button class="btn btn-sm btn-primary restore-snap-btn" data-token="${snap.token}">Restore</button>
+                </div>
+            </div>
+        </div>
+    `).join("");
+    
+    container.querySelectorAll(".restore-snap-btn").forEach(btn => {
+        btn.onclick = () => restoreSnapshot(btn.dataset.token);
+    });
 }
 
 async function changeQty(itemId, dir) {
@@ -115,11 +156,26 @@ async function saveCart() {
         document.getElementById("restore-token").value = token;
         document.getElementById("token-box").style.display = "block";
         toast("Cart snapshot saved (Memento)", "success");
+        loadSnapshots(); // Refresh snapshots list
     } catch (e) {
         toast(e.message || "Failed to save cart", "error");
     } finally {
         btn.disabled = false;
         btn.textContent = "Save Cart";
+    }
+}
+
+async function restoreSnapshot(token) {
+    if (!token) return;
+    
+    try {
+        await apiPost("/cart/restore", { session: ensureSession(), token });
+        await loadCart();
+        renderCart();
+        renderCartBadge();
+        toast("Cart restored (Memento)", "success");
+    } catch (e) {
+        toast(e.message || "Failed to restore cart", "error");
     }
 }
 
